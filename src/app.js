@@ -22,11 +22,12 @@ app.use(bodyParser.json())
 
 //Importar rutas
 var userRoutes =  require('./routes/users');
+var girlRoutes =  require('./routes/girls');
 
 
 //Conexion db
-// mongoose.connection.openUri('mongodb://localhost:27017/OcultuzDB', (err, res) => {
-mongoose.connection.openUri('mongodb://ocultuz:Ocultuz12@157.230.215.128:27017/OcultuzDB', (err, res) => {
+mongoose.connection.openUri('mongodb://localhost:27017/OcultuzDB', (err, res) => {
+// mongoose.connection.openUri('mongodb://ocultuz:Ocultuz12@157.230.215.128:27017/OcultuzDB', (err, res) => {
     if (err) throw err;
 
     console.log('Database running fine!');
@@ -35,6 +36,7 @@ mongoose.connection.openUri('mongodb://ocultuz:Ocultuz12@157.230.215.128:27017/O
 
 //Rutas 
 app.use('/users', userRoutes);
+app.use('/girls', girlRoutes);
 
 //Escuchar peticiones
 app.listen(3000, () => {

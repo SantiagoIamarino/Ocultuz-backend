@@ -9,6 +9,7 @@ const userSchema = new Schema({
         required: [true, 'El email es necesario'], 
         unique: [ true, 'Ya existe un usuario registrado con ese email' ] 
     },
+    status: { type: String },
     subscriptions: { type: Array, default: [] },
     role: { type: String, required: [true, 'El rol es necesario'] },
     password: { type: String, required: [true, 'La contraseña es necesaria'] },

@@ -1,7 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
-const User = require('../models/user');
-const UserDeleted = require('../models/user-deleted');
+const Girl = require('../models/girl');
 
 const jwt = require('jsonwebtoken');
 const key = require('../config/vars').key;
@@ -14,7 +13,7 @@ const app = express();
 
 app.get('/', mdAdmin, (req, res) => {
 
-    User.find({}, (err, users) => {
+    Girl.find({}, (err, girls) => {
 
         if(err) {
             return res.status(500).json({
@@ -25,18 +24,18 @@ app.get('/', mdAdmin, (req, res) => {
 
         return res.status(200).json({
             ok: true,
-            users
+            girls
         })
 
     })
 
 })
 
-app.get('/:userId', mdSameUser, (req, res) => {
+app.get('/:girlId', mdSameUser, (req, res) => {
 
-    const userId = req.params.userId;
+    const girlId = req.params.girlId;
 
-    User.findById(userId, 'name email birthDay', (err, user) => {
+    Girl.findById(girlId, (err, girl) => {
 
         if(err) {
             return res.status(500).json({
@@ -45,16 +44,16 @@ app.get('/:userId', mdSameUser, (req, res) => {
             })
         }
 
-        if(!user) {
+        if(!girl) {
             return res.status(400).json({
                 ok: false,
-                message: 'No se ha encontrado ningun usuario con ese ID'
+                message: 'No se ha encontrado ninguna creadora con ese ID'
             })
         }
 
         return res.status(200).json({
             ok: true,
-            user
+            girl
         })
 
     })
@@ -64,7 +63,7 @@ app.get('/:userId', mdSameUser, (req, res) => {
 app.post('/', (req, res) => {
     const body = req.body;
 
-    User.findOne({email: body.email}, (err, userDB) => {
+    Girl.findOne({email: body.email}, (err, girlDB) => {
         if(err) {
             return res.status(500).json({
                 ok: false,
@@ -72,7 +71,7 @@ app.post('/', (req, res) => {
             })
         }
 
-        if(userDB) {
+        if(girlDB) {
             return res.status(400).json({
                 ok: false,
                 message: 'El email ya se encuentra registrado'
@@ -81,9 +80,9 @@ app.post('/', (req, res) => {
 
         body.password = bcrypt.hashSync(body.password, 10);
 
-        const user = new User(body);
+        const girl = new Girl(body);
 
-        user.save((err, userDB) => {
+        girl.save((err, girlDB) => {
             if(err) {
                 return res.status(500).json({
                     ok: false,
@@ -91,28 +90,30 @@ app.post('/', (req, res) => {
                 })
             }
 
-            userDB.password = '';
+            girlDB.password = '';
 
             return res.status(201).json({
                 ok: true,
                 message: 'Te has registrado correctamente',
-                userDB
+                girlDB
             })
         })
     })
+
+    
 })
 
-app.put('/:userId', mdSameUser, (req, res) => {
-    const user = req.body;
-    const userId = req.params.userId;
+app.put('/:girlId', mdSameUser, (req, res) => {
+    const girl = req.body;
+    const girlId = req.params.girlId;
 
-    if(user.password) {
-        user.password = bcrypt.hashSync(user.password, 10);
+    if(girl.password) {
+        girl.password = bcrypt.hashSync(girl.password, 10);
     } else {
-      delete user.password;
+      delete girl.password;
     }
 
-    User.findByIdAndUpdate(userId, user, (err, userUpdated) => {
+    Girl.findByIdAndUpdate(girlId, girl, (err, girlUpdated) => {
         if(err) {
             return res.status(500).json({
                 ok: false,
@@ -122,16 +123,16 @@ app.put('/:userId', mdSameUser, (req, res) => {
 
         return res.status(200).json({
             ok: true,
-            message: 'Usuario modificado correctemente'
+            message: 'Creadora modificada correctemente'
         })
     })
 
 })
 
-app.delete('/:userId', [mdAuth, mdSameUser], (req, res) => {
-    const userId = req.params.userId;
+app.delete('/:girlId', [mdAuth, mdSameUser], (req, res) => {
+    const girlId = req.params.girlId;
 
-    User.findOneAndDelete(userId, (err, userDeleted) => {
+    Girl.findOneAndDelete(girlId, (err, girlDeleted) => {
         if(err) {
             return res.status(500).json({
                 ok: false,
@@ -139,26 +140,10 @@ app.delete('/:userId', [mdAuth, mdSameUser], (req, res) => {
             })
         }
 
-        const userDeletedRegister = new UserDeleted({
-          userDeleted,
-          deletedDate: new Date()
+        return res.status(200).json({
+            ok: true,
+            message: 'Creadora eliminada correctemente'
         })
-
-        userDeletedRegister.save((errInReg, userRegisteredAsDeleted) => {
-          if(errInReg) {
-              return res.status(500).json({
-                  ok: false,
-                  error: errInReg
-              })
-          }
-
-          return res.status(200).json({
-              ok: true,
-              message: 'Usuario eliminado correctemente'
-          })
-        })
-
-        
     })
 })
 
@@ -168,7 +153,7 @@ app.delete('/:userId', [mdAuth, mdSameUser], (req, res) => {
 app.post('/login', (req, res) => {
     const body = req.body;
 
-    User.findOne({email: body.email}, (err, userDB) => {
+    Girl.findOne({email: body.email}, (err, girlDB) => {
         if(err) {
             return res.status(500).json({
                 ok: false,
@@ -176,36 +161,36 @@ app.post('/login', (req, res) => {
             })
         }
 
-        if(!userDB) {
+        if(!girlDB) {
             return res.status(400).json({
                 ok: false,
                 message: 'El email no se encuentra registrado'
             })
         }
 
-        if(!bcrypt.compareSync(body.password, userDB.password)) {
+        if(!bcrypt.compareSync(body.password, girlDB.password)) {
             return res.status(400).json({
                 ok: false,
                 message: 'La contraseña es incorrecta'
             })
         }
 
-        userDB.password = '';
+        girlDB.password = '';
 
         const payload = {
             check:  true,
-            user: userDB
+            girl: girlDB
         };
 
         const token = jwt.sign(payload, key, {
             expiresIn: "3d"
         });
 
-        userDB.password = '';
+        girlDB.password = '';
 
         return res.status(200).json({
             ok: true,
-            user: userDB,
+            girl: girlDB,
             token
         })
     })
