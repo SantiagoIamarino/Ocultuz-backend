@@ -11,7 +11,7 @@ const userSchema = new Schema({
     },
     status: { type: String },
     subscriptions: { type: Array, default: [] },
-    role: { type: String, required: [true, 'El rol es necesario'] },
+    role: { type: String, default: 'USER_ROLE' },
     password: { type: String, required: [true, 'La contraseña es necesaria'] },
     birthDay: { type: String, required: [true, 'La fecha de nacimiento es necesaria'] },
     // code: { type: String, required: [true, 'El codigo es necesario'] },

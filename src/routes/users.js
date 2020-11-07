@@ -32,7 +32,7 @@ app.get('/', mdAdmin, (req, res) => {
 
 })
 
-app.get('/:userId', mdSameUser, (req, res) => {
+app.get('/:userId', [mdAuth, mdSameUser], (req, res) => {
 
     const userId = req.params.userId;
 
@@ -102,7 +102,7 @@ app.post('/', (req, res) => {
     })
 })
 
-app.put('/:userId', mdSameUser, (req, res) => {
+app.put('/:userId', [mdAuth, mdSameUser], (req, res) => {
     const user = req.body;
     const userId = req.params.userId;
 

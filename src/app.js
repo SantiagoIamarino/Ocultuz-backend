@@ -23,6 +23,7 @@ app.use(bodyParser.json())
 //Importar rutas
 var userRoutes =  require('./routes/users');
 var girlRoutes =  require('./routes/girls');
+var subscriptionRoutes =  require('./routes/subscriptions');
 
 
 //Conexion db
@@ -37,6 +38,7 @@ mongoose.connection.openUri('mongodb://localhost:27017/OcultuzDB', (err, res) =>
 //Rutas 
 app.use('/users', userRoutes);
 app.use('/girls', girlRoutes);
+app.use('/subscriptions', subscriptionRoutes);
 
 //Escuchar peticiones
 app.listen(3000, () => {

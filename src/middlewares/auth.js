@@ -19,7 +19,7 @@ module.exports.verifyToken = function( req, res, next ){
             })
         }
         
-        req.user = decoded.user;
+        req.user = (decoded.user) ? decoded.user : decoded.girl;
 
         next();
 

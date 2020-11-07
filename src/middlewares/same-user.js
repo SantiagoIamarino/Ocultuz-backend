@@ -4,7 +4,7 @@
 //===================================================
 
 module.exports.verifySameUserOrAdmin = function( req, res, next ){
-    const userId = req.params.userId;
+    const userId = (req.params.userId) ? req.params.userId : req.params.girlId ;
     const requestUser = req.user;
 
     if(requestUser.role !== 'ADMIN_ROLE' && userId !== requestUser._id) {

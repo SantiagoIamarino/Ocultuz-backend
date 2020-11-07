@@ -31,7 +31,7 @@ app.get('/', mdAdmin, (req, res) => {
 
 })
 
-app.get('/:girlId', mdSameUser, (req, res) => {
+app.get('/:girlId', [mdAuth, mdSameUser], (req, res) => {
 
     const girlId = req.params.girlId;
 
@@ -50,6 +50,8 @@ app.get('/:girlId', mdSameUser, (req, res) => {
                 message: 'No se ha encontrado ninguna creadora con ese ID'
             })
         }
+
+        girl.password = '';
 
         return res.status(200).json({
             ok: true,
@@ -103,7 +105,7 @@ app.post('/', (req, res) => {
     
 })
 
-app.put('/:girlId', mdSameUser, (req, res) => {
+app.put('/:girlId', [mdAuth, mdSameUser], (req, res) => {
     const girl = req.body;
     const girlId = req.params.girlId;
 
