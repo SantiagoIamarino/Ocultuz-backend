@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const User = require('../models/user');
 const UserDeleted = require('../models/user-deleted');
+const EmailRecover = require('../models/email-recover');
 
 const jwt = require('jsonwebtoken');
 const key = require('../config/vars').key;
@@ -207,6 +208,59 @@ app.post('/login', (req, res) => {
             ok: true,
             user: userDB,
             token
+        })
+    })
+})
+
+// Recover Password
+
+app.post('/recover-password', (req, res) => {
+    const body = req.body;
+
+    EmailRecover.findOne({email: body.userData.email}, (err, emailRecoverDB) => {
+        if(err) {
+            return res.status(500).json({
+                ok: false,
+                error: err
+            })
+        }
+
+        console.log(emailRecoverDB);
+
+        if(!emailRecoverDB || emailRecoverDB.code !== body.code) {
+            return res.status(400).json({
+                ok: false,
+                message: 'El link no es valido'
+            })
+        }
+
+        User.findById(emailRecoverDB.userId, (errUser, userDB) => {
+            if(errUser) {
+                return res.status(500).json({
+                    ok: false,
+                    error: errUser
+                })
+            }
+
+            const newPassword = bcrypt.hashSync(body.userData.password, 10);
+
+            userDB.password = newPassword;
+
+            userDB.update(userDB, (errUpdt, userUpdated) => {
+                if(errUpdt) {
+                    return res.status(500).json({
+                        ok: false,
+                        error: errUpdt
+                    })
+                }
+
+                EmailRecover.findOneAndDelete({email: body.userData.email}, (errDlt, regDeleted) => {
+                    return res.status(200).json({
+                        ok: true,
+                        message: 'La contraseña se ha modificado correctamente'
+                    })
+                })
+            })
         })
     })
 })
