@@ -31,9 +31,12 @@ app.get('/', (req, res) => {
 
 })
 
-app.get('/search', (req, res) => {
+app.get('/search/:term', (req, res) => {
 
-    Girl.find({$name: {$search: searchString}}, (err, girls) => {
+    const term = req.params.term;
+    const regex = new RegExp( term, 'i' );
+
+    Girl.find({name: regex}, (err, girls) => {
 
         if(err) {
             return res.status(500).json({
