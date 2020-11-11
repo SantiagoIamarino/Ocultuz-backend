@@ -11,7 +11,7 @@ const mdAdmin = require('../middlewares/admin').verifyRole;
 
 const app = express();
 
-app.get('/', mdAdmin, (req, res) => {
+app.get('/', (req, res) => {
 
     Girl.find({}, (err, girls) => {
 
@@ -31,7 +31,27 @@ app.get('/', mdAdmin, (req, res) => {
 
 })
 
-app.get('/:girlId', [mdAuth, mdSameUser], (req, res) => {
+app.get('/search', (req, res) => {
+
+    Girl.find({$name: {$search: searchString}}, (err, girls) => {
+
+        if(err) {
+            return res.status(500).json({
+                ok: false,
+                error: err
+            })
+        }
+
+        return res.status(200).json({
+            ok: true,
+            girls
+        })
+
+    })
+
+})
+
+app.get('/:girlId', mdAuth, (req, res) => {
 
     const girlId = req.params.girlId;
 

@@ -5,7 +5,7 @@ const Schema = mongoose.Schema;
 const girlSchema = new Schema({
     name: { type: String, required: true },
     email: { type: String, required: true },
-    email: { type: String, default: 'GIRL_ROLE' },
+    role: { type: String, default: 'GIRL_ROLE' },
     phoneNumber: { type: String, required: true },
     password: { type: String, required: true },
     description: { type: String },
@@ -15,7 +15,7 @@ const girlSchema = new Schema({
     status: { type: String, default: 'ACTIVE' },
     social:  { type: Array, required: true },
     banner: { type: String },
-    bannerP: { type: String },
+    previewImage: { type: String },
     basicContent: { type: Array },
     products: { type: Array }
 });
