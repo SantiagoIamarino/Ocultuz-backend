@@ -26,6 +26,7 @@ var girlRoutes =  require('./routes/girls');
 var subscriptionRoutes =  require('./routes/subscriptions');
 var emailRoutes =  require('./routes/emails');
 var fileRoutes =  require('./routes/files');
+var contentRoutes =  require('./routes/contents');
 
 
 //Conexion db
@@ -43,6 +44,7 @@ app.use('/girls', girlRoutes);
 app.use('/subscriptions', subscriptionRoutes);
 app.use('/emails', emailRoutes);
 app.use('/files', fileRoutes);
+app.use('/contents', contentRoutes);
 
 //Escuchar peticiones
 app.listen(3000, () => {

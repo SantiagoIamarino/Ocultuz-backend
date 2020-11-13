@@ -13,7 +13,7 @@ const app = express();
 
 app.get('/', (req, res) => {
 
-    Girl.find({}, (err, girls) => {
+    Girl.find({}, '_id previewImage', (err, girls) => {
 
         if(err) {
             return res.status(500).json({
@@ -54,11 +54,35 @@ app.get('/search/:term', (req, res) => {
 
 })
 
+function validateContent(contents, user) {
+  let contentToShow = [];
+
+  contents.forEach(content => {
+    content.allowed = true;
+
+    if(user._id != content.girlId) { // Allow if same girl is requesting
+
+      if(content.usersSubscribed.indexOf(user._id) < 0) { //User isn't subscribed
+        delete content.fileUrl;
+        content.allowed = false; // Don't show content to user
+      }
+
+    }
+
+    contentToShow.push(content);
+
+  });
+
+  return contentToShow;
+}
+
 app.get('/:girlId', mdAuth, (req, res) => {
 
     const girlId = req.params.girlId;
 
-    Girl.findById(girlId, (err, girl) => {
+    const contentToRetrive = '_id name description banner status basicContent products';
+
+    Girl.findById(girlId, contentToRetrive, (err, girl) => {
 
         if(err) {
             return res.status(500).json({
@@ -74,7 +98,9 @@ app.get('/:girlId', mdAuth, (req, res) => {
             })
         }
 
-        girl.password = '';
+        girl.basicContent = validateContent(girl.basicContent, req.user);
+
+        girl.products = validateContent(girl.products, req.user);
 
         return res.status(200).json({
             ok: true,
