@@ -3,8 +3,9 @@ const Content = require('../models/content');
 const Subscription = require('../models/subscription');
 const Girl = require('../models/girl');
 const User = require('../models/user');
-const content = require('../models/content');
+
 const mdAuth = require('../middlewares/auth').verifyToken;
+const mdSameUser = require('../middlewares/same-user').verifySameUserOrAdmin;
 
 const app = express();
 
@@ -72,6 +73,75 @@ app.get('/:contentId', mdAuth, (req, res) => {
         
     })
 })
+
+async function getUsersSubscribed(users) {
+  return new Promise((resolve, reject) => {
+    const usersToRetrieve = [];
+
+    users.forEach(async (userId, index) => {
+      await User.findById(userId, 'name _id email', (err, userDB) => {
+        if(err) {
+          reject(err);
+        } 
+
+        if(!userDB) {
+          reject('No hay usuario con esa ID')
+        }
+
+        usersToRetrieve.push(userDB);
+
+        if((index + 1) == users.length) {
+          resolve(usersToRetrieve);
+        }
+      })
+    });
+  })
+  
+  
+}
+
+app.get('/purchased/:girlId', [mdAuth, mdSameUser], (req, res) => {
+  const girlId = req.params.girlId;
+
+  Content.find({girlId, type: 'exclusive'}, async (err, contentsDB) => {
+    if(err) {
+      return res.status(500).json({
+        ok: false, 
+        error: err
+      })
+    }
+
+    if(!contentsDB) {
+      return res.status(400).json({
+        ok: false,
+        message: 'Esta creadora no posee contenido exclusivo'
+      })
+    }
+
+    const contentToRetrieve = [];
+
+    new Promise((resolve, reject) => {
+      contentsDB.forEach(async (content, index) => {
+        if(content.usersSubscribed.length > 0) {
+            const usersSubscribed = await getUsersSubscribed(content.usersSubscribed);
+            content.usersSubscribed = usersSubscribed;
+  
+            contentToRetrieve.push(content);
+
+            if((index + 1) == contentsDB.length) {
+              resolve(contentToRetrieve);
+            }
+        }
+      });
+    }).then((content) => {
+      return res.status(200).json({
+        ok: true,
+        content
+      })
+    })
+  })
+
+} )
 
 app.post('/', mdAuth, (req, res) => {
     const body = req.body;

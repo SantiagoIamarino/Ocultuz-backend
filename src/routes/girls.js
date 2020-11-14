@@ -80,7 +80,7 @@ app.get('/:girlId', mdAuth, (req, res) => {
 
     const girlId = req.params.girlId;
 
-    const contentToRetrive = '_id name description banner status basicContent products';
+    const contentToRetrive = '_id name description banner previewImage status basicContent products';
 
     Girl.findById(girlId, contentToRetrive, (err, girl) => {
 

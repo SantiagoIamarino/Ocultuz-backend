@@ -30,9 +30,11 @@ app.get('/user-subscriptions/:userId', [mdAuth, mdSameUser], (req, res) => {
 })
 
 app.get('/girl-subscriptions/:userId', [mdAuth, mdSameUser], (req, res) => {
-    const userId = req.params.userId;
+    const girlId = req.params.userId;
 
-    Subscription.find({userId:userId }, (err, subscriptions) => {
+    Subscription.find({girlId: girlId })
+    .populate('userId')
+    .exec((err, subscriptions) => {
         if(err) {
             return res.status(500).json({
                 ok: false,
