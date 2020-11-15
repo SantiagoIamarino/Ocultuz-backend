@@ -98,8 +98,6 @@ app.get('/:girlId', mdAuth, (req, res) => {
             })
         }
 
-        girl.basicContent = validateContent(girl.basicContent, req.user);
-
         girl.products = validateContent(girl.products, req.user);
 
         return res.status(200).json({
