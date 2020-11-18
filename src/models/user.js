@@ -13,7 +13,7 @@ const userSchema = new Schema({
     subscriptions: { type: Array, default: [] },
     role: { type: String, default: 'USER_ROLE' },
     password: { type: String, required: [true, 'La contraseña es necesaria'] },
-    birthDay: { type: String, required: [true, 'La fecha de nacimiento es necesaria'] },
+    birthDay: { type: String },
     // code: { type: String, required: [true, 'El codigo es necesario'] },
 });
 

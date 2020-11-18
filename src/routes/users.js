@@ -13,7 +13,7 @@ const mdAdmin = require('../middlewares/admin').verifyRole;
 
 const app = express();
 
-app.get('/', mdAdmin, (req, res) => {
+app.get('/', [mdAuth, mdAdmin], (req, res) => {
 
     User.find({}, (err, users) => {
 
@@ -27,6 +27,26 @@ app.get('/', mdAdmin, (req, res) => {
         return res.status(200).json({
             ok: true,
             users
+        })
+
+    })
+
+})
+
+app.get('/admins', [mdAuth, mdAdmin], (req, res) => {
+
+    User.find({role: 'ADMIN_ROLE'}, (err, admins) => {
+
+        if(err) {
+            return res.status(500).json({
+                ok: false,
+                error: err
+            })
+        }
+
+        return res.status(200).json({
+            ok: true,
+            admins
         })
 
     })
@@ -62,9 +82,7 @@ app.get('/:userId', [mdAuth, mdSameUser], (req, res) => {
 
 })
 
-app.post('/', (req, res) => {
-    const body = req.body;
-
+function createUser(body, res) {
     User.findOne({email: body.email}, (err, userDB) => {
         if(err) {
             return res.status(500).json({
@@ -101,6 +119,22 @@ app.post('/', (req, res) => {
             })
         })
     })
+}
+
+app.post('/', (req, res) => {
+    const body = req.body;
+
+    body.role = 'USER_ROLE';
+
+    createUser(body, res);
+})
+
+app.post('/admin', [mdAuth, mdAdmin], (req, res) => {
+    const body = req.body;
+
+    body.role = 'ADMIN_ROLE';
+
+    createUser(body, res);
 })
 
 app.put('/:userId', [mdAuth, mdSameUser], (req, res) => {
