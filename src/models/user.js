@@ -14,6 +14,7 @@ const userSchema = new Schema({
     role: { type: String, default: 'USER_ROLE' },
     password: { type: String, required: [true, 'La contraseña es necesaria'] },
     birthDay: { type: String },
+    adminRole: { type: String, default: 'SECONDARY' },
     // code: { type: String, required: [true, 'El codigo es necesario'] },
 });
 

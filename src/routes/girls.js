@@ -2,6 +2,21 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const Girl = require('../models/girl');
 
+const AWS = require('aws-sdk');
+const multer = require('multer');
+const multerS3 = require('multer-s3');
+
+const spacesEndpoint = new AWS.Endpoint('nyc3.digitaloceanspaces.com');
+
+process.env.SPACES_KEY = "PKUGPKZX5KPU3ESW4GUK";
+process.env.SPACES_SECRET = "leocn1edNgznf7nzAQ3TQ697pCG+gRAsHgabJXtEGVY";
+
+const s3 = new AWS.S3({
+    endpoint: spacesEndpoint,
+    accessKeyId: process.env.SPACES_KEY,
+    secretAccessKey: process.env.SPACES_SECRET
+});
+
 const jwt = require('jsonwebtoken');
 const key = require('../config/vars').key;
 
@@ -28,6 +43,34 @@ app.get('/', (req, res) => {
         })
 
     })
+
+})
+
+app.post('/admin', [mdAuth, mdAdmin], (req, res) => { //Get girls by filters
+
+  const filters = req.body;
+  const regex = new RegExp( filters.text, 'i' );
+
+  const mongooseFilters = {
+    $or:[ {'name':regex}, {'email':regex} ],
+    status: filters.status
+  }
+
+  Girl.find(mongooseFilters, (err, girls) => {
+
+      if(err) {
+          return res.status(500).json({
+              ok: false,
+              error: err
+          })
+      }
+
+      return res.status(200).json({
+          ok: true,
+          girls
+      })
+
+  })
 
 })
 
@@ -152,6 +195,24 @@ app.post('/', (req, res) => {
     
 })
 
+function deleteGirlPhoto(photo) {
+    const fileName = photo.split('.com/')[1]; // Getting filename
+    return new Promise((resolve, reject) => {
+        const params = {
+            Bucket: "ocultuz",
+            Key: fileName
+        };
+        
+        s3.deleteObject(params, (err, data) => {
+           if (err) {
+            reject(err)
+           }else{
+            resolve(data);
+           }
+        });
+    })
+}
+
 app.put('/:girlId', [mdAuth, mdSameUser], (req, res) => {
     const girl = req.body;
     const girlId = req.params.girlId;
@@ -162,7 +223,7 @@ app.put('/:girlId', [mdAuth, mdSameUser], (req, res) => {
       delete girl.password;
     }
 
-    Girl.findByIdAndUpdate(girlId, girl, (err, girlUpdated) => {
+    Girl.findById(girlId, async (err, girlDB) => {
         if(err) {
             return res.status(500).json({
                 ok: false,
@@ -170,10 +231,29 @@ app.put('/:girlId', [mdAuth, mdSameUser], (req, res) => {
             })
         }
 
-        return res.status(200).json({
-            ok: true,
-            message: 'Creadora modificada correctemente'
+        if((girlDB.banner && girl.banner) && girlDB.banner !== girl.banner) {
+            await deleteGirlPhoto(girlDB.banner);
+        }
+
+        if((girlDB.previewImage && girl.previewImage) && girlDB.previewImage !== girl.previewImage) {
+            await deleteGirlPhoto(girlDB.previewImage);
+        }
+
+        girlDB.update(girl, (errUpdt, girlUpdated) => {
+            if(errUpdt) {
+                return res.status(500).json({
+                    ok: false,
+                    error: errUpdt
+                })
+            }
+
+
+            return res.status(200).json({
+                ok: true,
+                message: 'Creadora modificada correctemente'
+            })
         })
+        
     })
 
 })
@@ -181,7 +261,7 @@ app.put('/:girlId', [mdAuth, mdSameUser], (req, res) => {
 app.delete('/:girlId', [mdAuth, mdSameUser], (req, res) => {
     const girlId = req.params.girlId;
 
-    Girl.findOneAndDelete(girlId, (err, girlDeleted) => {
+    Girl.findById(girlId, async (err, girlDB) => {
         if(err) {
             return res.status(500).json({
                 ok: false,
@@ -189,9 +269,38 @@ app.delete('/:girlId', [mdAuth, mdSameUser], (req, res) => {
             })
         }
 
-        return res.status(200).json({
-            ok: true,
-            message: 'Creadora eliminada correctemente'
+        if(girlDB.banner) {
+            await deleteGirlPhoto(girlDB.banner);
+        }
+
+        if(girlDB.previewImage) {
+            await deleteGirlPhoto(girlDB.previewImage);
+        }
+
+        girlDB.basicContent.forEach(async (content) => {
+            if(content.fileUrl) {
+                await deleteGirlPhoto(content.fileUrl);
+            }
+        });
+
+        girlDB.products.forEach(async (product) => {
+            if(product.fileUrl) {
+                await deleteGirlPhoto(product.fileUrl);
+            }
+        });
+
+        girlDB.delete((errDlt, girlDeleted) => {
+            if(errDlt) {
+                return res.status(500).json({
+                    ok: false,
+                    error: errDlt
+                })
+            }
+
+            return res.status(200).json({
+                ok: true,
+                message: 'Creadora eliminada correctemente'
+            })
         })
     })
 })

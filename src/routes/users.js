@@ -34,6 +34,12 @@ app.get('/', [mdAuth, mdAdmin], (req, res) => {
 })
 
 app.get('/admins', [mdAuth, mdAdmin], (req, res) => {
+    if(req.user.adminRole !== 'PRINCIPAL'){
+        return res.status(400).json({
+            ok: false,
+            message: 'No tienes permiso para realizar esta acción'
+        })
+    }
 
     User.find({role: 'ADMIN_ROLE'}, (err, admins) => {
 
@@ -57,7 +63,7 @@ app.get('/:userId', [mdAuth, mdSameUser], (req, res) => {
 
     const userId = req.params.userId;
 
-    User.findById(userId, 'name email birthDay', (err, user) => {
+    User.findById(userId, 'name email birthDay role adminRole subscriptions status', (err, user) => {
 
         if(err) {
             return res.status(500).json({
@@ -130,12 +136,48 @@ app.post('/', (req, res) => {
 })
 
 app.post('/admin', [mdAuth, mdAdmin], (req, res) => {
+
+    if(req.user.adminRole !== 'PRINCIPAL'){
+        return res.status(400).json({
+            ok: false,
+            message: 'No tienes permiso para realizar esta acción'
+        })
+    }
+
     const body = req.body;
 
     body.role = 'ADMIN_ROLE';
 
     createUser(body, res);
 })
+
+app.post('/panel', [mdAuth, mdAdmin], (req, res) => { //Get users by filters
+
+    const filters = req.body;
+    const regex = new RegExp( filters.text, 'i' );
+  
+    const mongooseFilters = {
+      $or:[ {'name': regex }, { 'email': regex } ],
+      status: filters.status
+    }
+  
+    User.find(mongooseFilters, (err, users) => {
+  
+        if(err) {
+            return res.status(500).json({
+                ok: false,
+                error: err
+            })
+        }
+  
+        return res.status(200).json({
+            ok: true,
+            users
+        })
+  
+    })
+  
+  })
 
 app.put('/:userId', [mdAuth, mdSameUser], (req, res) => {
     const user = req.body;
@@ -158,6 +200,44 @@ app.put('/:userId', [mdAuth, mdSameUser], (req, res) => {
         return res.status(200).json({
             ok: true,
             message: 'Usuario modificado correctemente'
+        })
+    })
+
+})
+
+app.put('/status/:userId', [mdAuth, mdAdmin], (req, res) => {
+    const status = req.body.newStatus;
+    const userId = req.params.userId;
+
+    User.findById(userId, (err, userDB) => {
+        if(err) {
+            return res.status(500).json({
+                ok: false,
+                error: err
+            })
+        }
+
+        if(!userDB) {
+            return res.status(400).json({
+                ok: false,
+                message: 'El usuario no existe'
+            })
+        }
+
+        userDB.status = status;
+
+        userDB.update(userDB, (errUpdt, userUpdated) => {
+            if(errUpdt) {
+                return res.status(500).json({
+                    ok: false,
+                    error: errUpdt
+                })
+            }
+
+            return res.status(200).json({
+                ok: true,
+                message: 'Usuario modificado correctemente'
+            })
         })
     })
 
