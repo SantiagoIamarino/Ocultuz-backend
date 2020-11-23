@@ -28,7 +28,7 @@ const app = express();
 
 app.get('/', (req, res) => {
 
-    Girl.find({}, '_id previewImage', (err, girls) => {
+    Girl.find({}, '_id previewImage nickname', (err, girls) => {
 
         if(err) {
             return res.status(500).json({
@@ -79,7 +79,7 @@ app.get('/search/:term', (req, res) => {
     const term = req.params.term;
     const regex = new RegExp( term, 'i' );
 
-    Girl.find({name: regex}, (err, girls) => {
+    Girl.find({nickname: regex}, (err, girls) => {
 
         if(err) {
             return res.status(500).json({
@@ -123,7 +123,7 @@ app.get('/:girlId', mdAuth, (req, res) => {
 
     const girlId = req.params.girlId;
 
-    const contentToRetrive = '_id name description banner previewImage status basicContent products';
+    const contentToRetrive = '_id name description banner previewImage status basicContent products nickname';
 
     Girl.findById(girlId, contentToRetrive, (err, girl) => {
 

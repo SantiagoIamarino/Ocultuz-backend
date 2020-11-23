@@ -4,6 +4,7 @@ const Schema = mongoose.Schema;
 
 const girlSchema = new Schema({
     name: { type: String, required: true },
+    nickname: { type: String, required: true },
     email: { type: String, required: true },
     role: { type: String, default: 'GIRL_ROLE' },
     phoneNumber: { type: String, required: true },
