@@ -40,13 +40,15 @@ app.post('/recover-password', (req, res) => {
           })
         }
 
-        let transport = nodemailer.createTransport({
-          host: "smtp.mailtrap.io",
-          port: 2525,
-          auth: {
-            user: "96d986228f5d6a",
-            pass: "876c01ba01a310"
-          }
+        
+
+      let transport = nodemailer.createTransport({
+        host: "smtpout.secureserver.net",
+        port: 465,
+        auth: {
+          user: "contacto@incubadorakinich.org",
+          pass: "AdmonKinich9_"
+        }
       });
   
       let url = 'http://157.230.215.128/#/recuperar-contrasena/';

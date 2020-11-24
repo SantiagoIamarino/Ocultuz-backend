@@ -15,6 +15,7 @@ const girlSchema = new Schema({
     instagram: { type: String, required: true },
     status: { type: String, default: 'ACTIVE' },
     social:  { type: Array, required: true },
+    terms:  { type: Boolean, default: true },
     banner: { type: String },
     previewImage: { type: String },
     basicContent: { type: Array },

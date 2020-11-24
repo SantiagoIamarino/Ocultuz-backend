@@ -7,6 +7,7 @@ const contentSchema = new Schema({
     type: { type: String, required: true },
     girlId: { type: Schema.Types.ObjectId, ref: 'Girl', required: true },
     amount: { type: String },
+    description: { type: String },
     fileUrl: { type: String, required: true }
 })
 

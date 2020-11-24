@@ -15,6 +15,7 @@ const userSchema = new Schema({
     password: { type: String, required: [true, 'La contraseña es necesaria'] },
     birthDay: { type: String },
     adminRole: { type: String, default: 'SECONDARY' },
+    terms: { type: Boolean, default: true },
     // code: { type: String, required: [true, 'El codigo es necesario'] },
 });
 

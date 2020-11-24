@@ -14,7 +14,7 @@ const s3 = new AWS.S3({
     secretAccessKey: process.env.SPACES_SECRET
 });
 
-const allowedExtensions = ['jpg', 'jpeg', 'png', 'jfif', 'gif', 'svg', 'mp4', 'mov'];
+const allowedExtensions = ['jpg', 'jpeg', 'png', 'jfif', 'gif', 'svg', 'mp4', 'mov', 'avi', 'webm', 'wmv', 'flw'];
 
 const app = express();
 
