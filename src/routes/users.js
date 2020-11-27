@@ -153,15 +153,21 @@ app.post('/admin', [mdAuth, mdAdmin], (req, res) => {
 
 app.post('/panel', [mdAuth, mdAdmin], (req, res) => { //Get users by filters
 
-    const filters = req.body;
+    const filters = req.body.filters;
     const regex = new RegExp( filters.text, 'i' );
-  
+
     const mongooseFilters = {
-      $or:[ {'name': regex }, { 'email': regex } ],
-      status: filters.status
+        $or:[ {'name':regex}, {'email':regex} ],
+        status: filters.status
     }
+
+    const page = parseInt(req.body.pagination.page);
+    const perPage = parseInt(req.body.pagination.perPage);  
   
-    User.find(mongooseFilters, (err, users) => {
+    User.find(mongooseFilters)
+    .skip((page - 1) * perPage)
+    .limit(perPage)
+    .exec((err, users) => {
   
         if(err) {
             return res.status(500).json({
@@ -170,9 +176,16 @@ app.post('/panel', [mdAuth, mdAdmin], (req, res) => { //Get users by filters
             })
         }
   
-        return res.status(200).json({
-            ok: true,
-            users
+        User.count(mongooseFilters, (errCount, total) => {
+            return res.status(200).json({
+              ok: true,
+              users,
+              pagination: {
+                total,
+                currentPage: page,
+                lastPage: Math.ceil(total / perPage)
+              }
+            })
         })
   
     })

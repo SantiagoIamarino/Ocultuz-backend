@@ -46,9 +46,9 @@ app.get('/', (req, res) => {
 
 })
 
-app.post('/admin', [mdAuth, mdAdmin], (req, res) => { //Get girls by filters
+app.post('/admin', (req, res) => { //Get girls by filters
 
-  const filters = req.body;
+  const filters = req.body.filters;
   const regex = new RegExp( filters.text, 'i' );
 
   const mongooseFilters = {
@@ -56,7 +56,13 @@ app.post('/admin', [mdAuth, mdAdmin], (req, res) => { //Get girls by filters
     status: filters.status
   }
 
-  Girl.find(mongooseFilters, (err, girls) => {
+  const page = parseInt(req.body.pagination.page);
+  const perPage = parseInt(req.body.pagination.perPage);
+
+  Girl.find(mongooseFilters)
+  .skip((page - 1) * perPage)
+  .limit(perPage)
+  .exec((err, girls) => {
 
       if(err) {
           return res.status(500).json({
@@ -65,10 +71,19 @@ app.post('/admin', [mdAuth, mdAdmin], (req, res) => { //Get girls by filters
           })
       }
 
-      return res.status(200).json({
-          ok: true,
-          girls
+      Girl.count(mongooseFilters, (errCount, total) => {
+          return res.status(200).json({
+            ok: true,
+            girls,
+            pagination: {
+              total,
+              currentPage: page,
+              lastPage: Math.ceil(total / perPage)
+            }
+          })
       })
+
+      
 
   })
 
