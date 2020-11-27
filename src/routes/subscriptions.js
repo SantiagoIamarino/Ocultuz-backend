@@ -29,11 +29,13 @@ app.get('/user-subscriptions/:userId', [mdAuth, mdSameUser], (req, res) => {
         })
 })
 
-app.get('/girl-subscriptions/:userId', [mdAuth, mdSameUser], (req, res) => {
+app.post('/girl-subscriptions/:userId', [mdAuth, mdSameUser], (req, res) => {
     const girlId = req.params.userId;
+    const limit = req.body.limit;
 
     Subscription.find({girlId: girlId })
     .populate('userId')
+    .limit(limit)
     .exec((err, subscriptions) => {
         if(err) {
             return res.status(500).json({
@@ -42,10 +44,15 @@ app.get('/girl-subscriptions/:userId', [mdAuth, mdSameUser], (req, res) => {
             })
         }
 
-        return res.status(200).json({
+        Subscription.count({girlId: girlId }, (errCount, total) => {
+          return res.status(200).json({
             ok: true,
+            total,
             subscriptions
+          })
         })
+
+        
     })
 
 })
