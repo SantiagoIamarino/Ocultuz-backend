@@ -5,6 +5,7 @@ const UserDeleted = require('../models/user-deleted');
 const EmailRecover = require('../models/email-recover');
 
 const jwt = require('jsonwebtoken');
+const user = require('../models/user');
 const key = require('../config/vars').key;
 
 const mdAuth = require('../middlewares/auth').verifyToken;
@@ -311,6 +312,13 @@ app.post('/login', (req, res) => {
             })
         }
 
+        if(!userDB.emailVerified) {
+            return res.status(400).json({
+                ok: false,
+                message: 'Tu email no se ha verificado aún, revisa tu correo'
+            })
+        }
+
         if(!bcrypt.compareSync(body.password, userDB.password)) {
             return res.status(400).json({
                 ok: false,
@@ -337,6 +345,65 @@ app.post('/login', (req, res) => {
             token
         })
     })
+})
+
+// Validate account
+
+app.get('/validate-account/:code', (req, res) => {
+  const code = req.params.code;
+
+  EmailRecover.findOne({code: code}, (err, emailRecoverDB) => {
+    if(err) {
+      return res.status(500).json({
+        ok: false,
+        error: err
+      })
+    }
+
+    if(!emailRecoverDB) {
+      return res.status(400).json({
+        ok: false,
+        message: 'No existe este link o expiró'
+      })
+    }
+
+    User.findById(emailRecoverDB.userId, (errUsr, userDB) => {
+      if(errUsr) {
+        return res.status(500).json({
+          ok: false,
+          error: errUsr
+        })
+      }
+
+      if(!userDB) {
+        return res.status(400).json({
+          ok: false,
+          message: 'El usuario no existe'
+        })
+      }
+
+      userDB.emailVerified = true;
+
+      userDB.update(userDB, (errUpdt, userUpdated) => {
+        if(errUpdt) {
+          return res.status(500).json({
+            ok: false,
+            error: errUpdt
+          })
+        }
+
+        EmailRecover.findOneAndDelete({code: code}, (errDlt, regDeleted) => {
+          return res.status(200).json({
+              ok: true,
+              message: 'Has verificado tu cuenta correctamente, ya puedes iniciar sesión'
+          })
+      })
+
+      })
+    })
+
+  })
+
 })
 
 // Recover Password
@@ -391,5 +458,6 @@ app.post('/recover-password', (req, res) => {
         })
     })
 })
+
 
 module.exports = app;
