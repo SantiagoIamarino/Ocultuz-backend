@@ -32,9 +32,11 @@ app.get('/user-subscriptions/:userId', [mdAuth, mdSameUser], (req, res) => {
 app.post('/girl-subscriptions/:userId', [mdAuth, mdSameUser], (req, res) => {
     const girlId = req.params.userId;
     const limit = req.body.limit;
+    const page = req.body.page;
 
     Subscription.find({girlId: girlId })
     .populate('userId')
+    .skip(page * limit - limit)
     .limit(limit)
     .exec((err, subscriptions) => {
         if(err) {
