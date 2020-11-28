@@ -46,8 +46,8 @@ app.post('/recover-password', (req, res) => {
         host: "smtpout.secureserver.net",
         port: 465,
         auth: {
-          user: "contacto@incubadorakinich.org",
-          pass: "AdmonKinich9_"
+          user: "soporte@ocultuz.com",
+          pass: "soporteOcultuz"
         }
       });
   
@@ -122,8 +122,8 @@ app.post('/verify-account', (req, res) => {
       host: "smtpout.secureserver.net",
       port: 465,
       auth: {
-        user: "contacto@incubadorakinich.org",
-        pass: "AdmonKinich9_"
+        user: "soporte@ocultuz.com",
+        pass: "soporteOcultuz"
       }
     });
 

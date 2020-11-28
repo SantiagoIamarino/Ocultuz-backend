@@ -8,7 +8,8 @@ const contentSchema = new Schema({
     girlId: { type: Schema.Types.ObjectId, ref: 'Girl', required: true },
     amount: { type: String },
     description: { type: String },
-    fileUrl: { type: String, required: true }
+    fileUrl: { type: String, required: true },
+    preview: { type: String }
 })
 
 module.exports = mongoose.model('Content', contentSchema);
