@@ -121,16 +121,20 @@ app.get('/purchased/:girlId', [mdAuth, mdSameUser], (req, res) => {
     const contentToRetrieve = [];
 
     new Promise((resolve, reject) => {
+      if(contentsDB.length <= 0) {
+        resolve(contentToRetrieve);
+      }
+
       contentsDB.forEach(async (content, index) => {
         if(content.usersSubscribed.length > 0) {
             const usersSubscribed = await getUsersSubscribed(content.usersSubscribed);
             content.usersSubscribed = usersSubscribed;
   
             contentToRetrieve.push(content);
+        }
 
-            if((index + 1) == contentsDB.length) {
-              resolve(contentToRetrieve);
-            }
+        if((index + 1) == contentsDB.length) {
+          resolve(contentToRetrieve);
         }
       });
     }).then((content) => {
