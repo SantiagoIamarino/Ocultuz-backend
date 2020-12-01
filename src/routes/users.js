@@ -5,7 +5,6 @@ const UserDeleted = require('../models/user-deleted');
 const EmailRecover = require('../models/email-recover');
 
 const jwt = require('jsonwebtoken');
-const user = require('../models/user');
 const key = require('../config/vars').key;
 
 const mdAuth = require('../middlewares/auth').verifyToken;
@@ -260,7 +259,7 @@ app.put('/status/:userId', [mdAuth, mdAdmin], (req, res) => {
 app.delete('/:userId', [mdAuth, mdSameUser], (req, res) => {
     const userId = req.params.userId;
 
-    User.findOneAndDelete(userId, (err, userDeleted) => {
+    User.findOneAndDelete({_id: userId}, (err, userDeleted) => {
         if(err) {
             return res.status(500).json({
                 ok: false,
@@ -337,8 +336,6 @@ app.post('/login', (req, res) => {
         const token = jwt.sign(payload, key, {
             expiresIn: "3d"
         });
-
-        userDB.password = '';
 
         return res.status(200).json({
             ok: true,

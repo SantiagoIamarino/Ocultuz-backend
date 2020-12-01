@@ -30,8 +30,8 @@ var contentRoutes =  require('./routes/contents');
 
 
 //Conexion db
-// mongoose.connection.openUri('mongodb://localhost:27017/OcultuzDB', (err, res) => {
-mongoose.connection.openUri('mongodb://ocultuz:Ocultuz12@157.230.215.128:27017/OcultuzDB', (err, res) => {
+mongoose.connection.openUri('mongodb://localhost:27017/OcultuzDB', (err, res) => {
+// mongoose.connection.openUri('mongodb://ocultuz:Ocultuz12@157.230.215.128:27017/OcultuzDB', (err, res) => {
     if (err) throw err;
 
     console.log('Database running fine!');
