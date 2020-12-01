@@ -409,7 +409,7 @@ app.get('/validate-account/:code', (req, res) => {
 app.post('/recover-password', (req, res) => {
     const body = req.body;
 
-    EmailRecover.findOne({email: body.userData.email}, (err, emailRecoverDB) => {
+    EmailRecover.find({email: body.userData.email}, (err, emailsRecoverDB) => {
         if(err) {
             return res.status(500).json({
                 ok: false,
@@ -417,12 +417,19 @@ app.post('/recover-password', (req, res) => {
             })
         }
 
-        console.log(emailRecoverDB);
-
-        if(!emailRecoverDB || emailRecoverDB.code !== body.code) {
+        if(emailsRecoverDB.length <= 0) {
             return res.status(400).json({
                 ok: false,
-                message: 'El link no es valido'
+                message: 'No se ha solicitado un cambio de contraseña para este email'
+            })
+        }
+
+        const emailRecoverDB = emailsRecoverDB[emailsRecoverDB.length - 1];
+
+        if(emailRecoverDB.code !== body.code) {
+            return res.status(400).json({
+                ok: false,
+                message: 'El link no es válido'
             })
         }
 
