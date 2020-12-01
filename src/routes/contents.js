@@ -114,7 +114,7 @@ app.get('/purchased/:girlId', [mdAuth, mdSameUser], (req, res) => {
     if(!contentsDB) {
       return res.status(400).json({
         ok: false,
-        message: 'Esta creadora no posee contenido exclusivo'
+        message: 'Esta creadora no posee Tips'
       })
     }
 
