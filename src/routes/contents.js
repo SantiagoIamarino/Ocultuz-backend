@@ -1,5 +1,6 @@
 const express = require('express');
 const Content = require('../models/content');
+const Purchase = require('../models/purchase');
 const Subscription = require('../models/subscription');
 const Girl = require('../models/girl');
 const User = require('../models/user');
@@ -103,45 +104,23 @@ async function getUsersSubscribed(users) {
 app.get('/purchased/:girlId', [mdAuth, mdSameUser], (req, res) => {
   const girlId = req.params.girlId;
 
-  Content.find({girlId, type: 'exclusive'}, async (err, contentsDB) => {
+  Purchase.find({
+    girlId,
+    type: 'product'
+  })
+  .populate('contentId') 
+  .populate('userId') 
+  .exec((err, purchasesDB) => {
     if(err) {
       return res.status(500).json({
-        ok: false, 
+        ok: false,
         error: err
       })
     }
 
-    if(!contentsDB) {
-      return res.status(400).json({
-        ok: false,
-        message: 'Esta creadora no posee Tips'
-      })
-    }
-
-    const contentToRetrieve = [];
-
-    new Promise((resolve, reject) => {
-      if(contentsDB.length <= 0) {
-        resolve(contentToRetrieve);
-      }
-
-      contentsDB.forEach(async (content, index) => {
-        if(content.usersSubscribed.length > 0) {
-            const usersSubscribed = await getUsersSubscribed(content.usersSubscribed);
-            content.usersSubscribed = usersSubscribed;
-  
-            contentToRetrieve.push(content);
-        }
-
-        if((index + 1) == contentsDB.length) {
-          resolve(contentToRetrieve);
-        }
-      });
-    }).then((content) => {
-      return res.status(200).json({
-        ok: true,
-        content
-      })
+    return res.status(200).json({
+      ok: true,
+      content: purchasesDB
     })
   })
 
@@ -248,69 +227,26 @@ app.put('/buy/:contentId', mdAuth, (req, res) => {
             //------Verificar vencimiento y pago ACA-------
             // --------------------------------------------
 
-            if(contentDB.usersSubscribed.indexOf(userId) >= 0) {
-              return res.status(400).json({
-                ok: false,
-                message: 'Ya has comprado este contenido'
-              })
-            }
+            const newPurchase = new Purchase({
+              girlId: contentDB.girlId,
+              userId,
+              contentId,
+              type: 'product'
+            })
 
-            contentDB.usersSubscribed.push(userId);
-
-            contentDB.update(contentDB, (errContentUpdt, contentUpdated) => {
-              if(errContentUpdt) {
+            newPurchase.save((errPurchase, purchaseSaved) => {
+              if(errPurchase ){
                 return res.status(500).json({
-                    ok: false,
-                    error: errContentUpdt
+                  ok: false,
+                  error: errPurchase
                 })
               }
 
-              Girl.findById(contentDB.girlId, (errGrl, girlDB) => {
-                if(errGrl) {
-                  return res.status(500).json({
-                      ok: false,
-                      error: errGrl
-                  })
-                }
-
-                if(!girlDB){
-                  return res.status(400).json({
-                      ok: false,
-                      message: 'No existe creadora con ese ID'
-                  })
-                }
-
-                if(contentDB.type == 'general') {
-                  let contentToUpdateIndex = girlDB.basicContent.findIndex(content => {
-                    return content._id == contentDB._id;
-                  })
-
-                  girlDB.basicContent[contentToUpdateIndex] = contentDB;
-                } else {
-                  let contentToUpdateIndex = girlDB.products.findIndex(content => {
-                    return (content._id.toString()) == (contentDB._id.toString());
-                  })
-
-                  girlDB.products[contentToUpdateIndex] = contentDB;
-                }
-
-                girlDB.update(girlDB, (girlUpdtErr, girlUpdated) => {
-                  if(girlUpdtErr) {
-                    return res.status(500).json({
-                        ok: false,
-                        error: girlUpdtErr
-                    })
-                  }
-
-                  return res.status(200).json({
-                      ok: true,
-                      message: 'Has comprado este contenido correctamente'
-                  })
-                })
-
+              return res.status(200).json({
+                ok: true,
+                message: 'Adquiriste el contenido correctamente'
               })
             })
-
         })
     } else {
         return res.status(400).json({

@@ -4,6 +4,7 @@ const mdAuth = require('../middlewares/auth').verifyToken;
 const mdSameUser = require('../middlewares/same-user').verifySameUserOrAdmin;
 
 const Subscription = require('../models/subscription');
+const Purchase = require('../models/purchase');
 const User = require('../models/user');
 
 const app = express();
@@ -82,7 +83,8 @@ app.post('/', (req, res) => { // Se realiza luego del pago
 
             const subscriptionData = {
                 userId: body.userId,
-                girlId: body.girlId
+                girlId: body.girlId,
+                type: 'subscription'
             }
         
             const subscription = new Subscription(subscriptionData);
@@ -94,19 +96,32 @@ app.post('/', (req, res) => { // Se realiza luego del pago
                         error: err
                     })
                 }
+
+                // Creating purchase
+
+                const purchase = new Purchase(subscriptionData);
                 
-                userDB.update(userDB, (updateErr, userUpdated) => {
-                    if(updateErr) {
+                purchase.save((purchaseErr, purchaseSaved) => {
+                    if(purchaseErr) {
                         return res.status(500).json({
                             ok: false,
-                            error: updateErr
+                            error: purchaseErr
                         })
                     }
-        
-                    return res.status(201).json({
-                        ok: true,
-                        user: userDB,
-                        message: 'Te has subscrito correctamente!'
+
+                    userDB.update(userDB, (updateErr, userUpdated) => {
+                        if(updateErr) {
+                            return res.status(500).json({
+                                ok: false,
+                                error: updateErr
+                            })
+                        }
+            
+                        return res.status(201).json({
+                            ok: true,
+                            user: userDB,
+                            message: 'Te has subscrito correctamente!'
+                        })
                     })
                 })
             })

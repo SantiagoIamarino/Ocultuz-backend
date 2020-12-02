@@ -1,6 +1,8 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const Girl = require('../models/girl');
+const Purchase = require('../models/purchase');
+const Subscription = require('../models/subscription');
 
 const AWS = require('aws-sdk');
 const multer = require('multer');
@@ -82,9 +84,6 @@ app.post('/admin', (req, res) => { //Get girls by filters
             }
           })
       })
-
-      
-
   })
 
 })
@@ -112,36 +111,55 @@ app.get('/search/:term', (req, res) => {
 
 })
 
-function validateContent(contents, user) {
-  let contentToShow = [];
+async function validateContent(contents, user) {
+  return new Promise((resolve, reject) => {
+    let contentToShow = [];
 
-  contents.forEach(content => {
-    content.allowed = true;
+    new Promise((endClicle, rejectCicle) => {
+        contents.forEach(async (content, index) => {
+            content.allowed = true;
+        
+            if(user._id != content.girlId) { // Allow if same girl is requesting
+        
+              await Purchase.findOne({
+                  contentId: content._id,
+                  userId: user._id
+              }, (err, contentDB) => {
+                  if(err) {
+                      reject(err);
+                  }
+      
+                  if(!contentDB) { // Don't show content to user
+                      content.fileUrl = '';
+                      content.allowed = false;
+                  }
+      
+                  contentToShow.push(content);
+              })
+        
+            } else {
+              contentToShow.push(content);
+            }
 
-    if(user._id != content.girlId) { // Allow if same girl is requesting
-
-      if(content.usersSubscribed.indexOf(user._id) < 0) { //User isn't subscribed
-        delete content.fileUrl;
-        content.allowed = false; // Don't show content to user
-      }
-
-    }
-
-    contentToShow.push(content);
-
-  });
-
-  return contentToShow;
+            if((index + 1) === contents.length) {
+                endClicle();
+            }
+        
+        });
+    }).then(() => {
+        resolve(contentToShow);
+    })
+  })
+  
 }
 
-app.get('/:girlId', mdAuth, (req, res) => {
+app.get('/get-content/:girlId', mdAuth, (req, res) => {
 
     const girlId = req.params.girlId;
 
     const contentToRetrive = '_id name description banner previewImage status basicContent products nickname';
 
-    Girl.findById(girlId, contentToRetrive, (err, girl) => {
-
+    Girl.findById(girlId, contentToRetrive, async (err, girl) => {
         if(err) {
             return res.status(500).json({
                 ok: false,
@@ -150,21 +168,61 @@ app.get('/:girlId', mdAuth, (req, res) => {
         }
 
         if(!girl) {
-            return res.status(400).json({
-                ok: false,
+          return res.status(400).json({
+              ok: false,
                 message: 'No se ha encontrado ninguna creadora con ese ID'
             })
         }
+        console.log(girlId, req.user._id);
+        Subscription.findOne({
+          girlId,
+          userId: req.user._id
+        }, async (errSubs, subscriptionDB) => {
 
-        girl.products = validateContent(girl.products, req.user);
+          if(errSubs) {
+              return res.status(500).json({
+                  ok: false,
+                  error: errSubs
+              })
+          }
 
-        return res.status(200).json({
-            ok: true,
-            girl
+          if(!subscriptionDB) {
+            return res.status(400).json({
+                ok: false,
+                message: 'No te encuentras subscripto a esta creadora'
+              })
+          }
+
+          girl.products = await validateContent(girl.products, req.user);
+
+          return res.status(200).json({
+              ok: true,
+              girl
+          })
+
         })
-
     })
 
+})
+
+app.get('/:girlId', [mdAuth, mdSameUser], (req, res) => {
+  const girlId = req.params.girlId;
+
+  Girl.findById(girlId, (err, girlDB) => {
+    if(err) {
+      return res.status(500).json({
+        ok: false,
+        error: err
+      })
+    }
+
+    girlDB.password = '';
+
+    return res.status(200).json({
+      ok: true,
+      girl: girlDB
+    })
+  })
 })
 
 app.post('/', (req, res) => {
