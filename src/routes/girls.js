@@ -116,36 +116,39 @@ async function validateContent(contents, user) {
     let contentToShow = [];
 
     new Promise((endClicle, rejectCicle) => {
-        contents.forEach(async (content, index) => {
-            content.allowed = true;
-        
-            if(user._id != content.girlId) { // Allow if same girl is requesting
-        
-              await Purchase.findOne({
-                  contentId: content._id,
-                  userId: user._id
-              }, (err, contentDB) => {
-                  if(err) {
-                      reject(err);
-                  }
-      
-                  if(!contentDB) { // Don't show content to user
-                      content.fileUrl = '';
-                      content.allowed = false;
-                  }
-      
-                  contentToShow.push(content);
-              })
-        
-            } else {
-              contentToShow.push(content);
-            }
+      if(contents.length <= 0) {
+        endClicle();
+      }
 
-            if((index + 1) === contents.length) {
-                endClicle();
-            }
-        
-        });
+      contents.forEach(async (content, index) => {
+          content.allowed = true;
+      
+          if(user._id != content.girlId) { // Allow if same girl is requesting
+            await Purchase.findOne({
+                contentId: content._id,
+                userId: user._id
+            }, (err, contentDB) => {
+                if(err) {
+                    reject(err);
+                }
+    
+                if(!contentDB) { // Don't show content to user
+                    content.fileUrl = '';
+                    content.allowed = false;
+                }
+    
+                contentToShow.push(content);
+            })
+      
+          } else {
+            contentToShow.push(content);
+          }
+
+          if((index + 1) === contents.length) {
+              endClicle();
+          }
+      
+      });
     }).then(() => {
         resolve(contentToShow);
     })
@@ -154,7 +157,6 @@ async function validateContent(contents, user) {
 }
 
 app.get('/get-content/:girlId', mdAuth, (req, res) => {
-
     const girlId = req.params.girlId;
 
     const contentToRetrive = '_id name description banner previewImage status basicContent products nickname';
