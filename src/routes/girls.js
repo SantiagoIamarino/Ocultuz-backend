@@ -173,7 +173,6 @@ app.get('/get-content/:girlId', mdAuth, (req, res) => {
                 message: 'No se ha encontrado ninguna creadora con ese ID'
             })
         }
-        console.log(girlId, req.user._id);
         Subscription.findOne({
           girlId,
           userId: req.user._id
@@ -214,6 +213,13 @@ app.get('/:girlId', [mdAuth, mdSameUser], (req, res) => {
         ok: false,
         error: err
       })
+    }
+
+    if(!girlDB) {
+        return res.status(400).json({
+            ok: false,
+            message: 'No existe esta creadora'
+        })
     }
 
     girlDB.password = '';

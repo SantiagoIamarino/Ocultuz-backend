@@ -6,6 +6,7 @@ const mdSameUser = require('../middlewares/same-user').verifySameUserOrAdmin;
 const Subscription = require('../models/subscription');
 const Purchase = require('../models/purchase');
 const User = require('../models/user');
+const { mongo } = require('mongoose');
 
 const app = express();
 
@@ -35,7 +36,18 @@ app.post('/girl-subscriptions/:userId', [mdAuth, mdSameUser], (req, res) => {
     const limit = req.body.limit;
     const page = req.body.page;
 
-    Subscription.find({girlId: girlId })
+    const mongooseFilters = {
+      girlId: girlId
+    }
+
+    if(req.body.filter && req.body.filter.from && req.body.filter.to) {
+      mongooseFilters.$and = [
+        { subscribedSince: { $gte: req.body.filter.from } },
+        { subscribedSince: { $lte: req.body.filter.to } }
+      ];
+    }
+
+    Subscription.find(mongooseFilters)
     .populate('userId')
     .skip(page * limit - limit)
     .limit(limit)
@@ -47,7 +59,7 @@ app.post('/girl-subscriptions/:userId', [mdAuth, mdSameUser], (req, res) => {
             })
         }
 
-        Subscription.count({girlId: girlId }, (errCount, total) => {
+        Subscription.count(mongooseFilters, (errCount, total) => {
           return res.status(200).json({
             ok: true,
             total,

@@ -101,13 +101,22 @@ async function getUsersSubscribed(users) {
   
 }
 
-app.get('/purchased/:girlId', [mdAuth, mdSameUser], (req, res) => {
+app.post('/purchased/:girlId', [mdAuth, mdSameUser], (req, res) => {
   const girlId = req.params.girlId;
 
-  Purchase.find({
+  const mongooseFilters = {
     girlId,
     type: 'product'
-  })
+  }
+
+  if(req.body.filter && req.body.filter.from && req.body.filter.to) {
+    mongooseFilters.$and = [
+      { date: { $gte: req.body.filter.from } },
+      { date: { $lte: req.body.filter.to } }
+    ];
+  }
+
+  Purchase.find(mongooseFilters)
   .populate('contentId') 
   .populate('userId') 
   .exec((err, purchasesDB) => {
