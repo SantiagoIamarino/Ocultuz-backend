@@ -2,6 +2,7 @@ const express = require('express');
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcrypt');
 const User = require('../models/user');
+const Girl = require('../models/girl');
 const EmailRecover = require('../models/email-recover');
 
 const app = express();
@@ -91,8 +92,11 @@ app.post('/recover-password', (req, res) => {
 
 app.post('/verify-account', (req, res) => {
   const email = req.body.email;
+  const type = req.body.type;
 
-  User.findOne({email: email}, (err, userDB) => {
+  const collection = (type === 'girl') ? Girl : User;
+
+  collection.findOne({email: email}, (err, userDB) => {
     if(err) {
       return res.status(500).json({
         ok: false,

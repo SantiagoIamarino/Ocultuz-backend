@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const User = require('../models/user');
+const Girl = require('../models/girl');
 const UserDeleted = require('../models/user-deleted');
 const EmailRecover = require('../models/email-recover');
 
@@ -373,31 +374,61 @@ app.get('/validate-account/:code', (req, res) => {
       }
 
       if(!userDB) {
-        return res.status(400).json({
-          ok: false,
-          message: 'El usuario no existe'
+
+        Girl.findById(emailRecoverDB.userId, (errGirl, girlDB) => {
+            if(errUsr) {
+                return res.status(500).json({
+                    ok: false,
+                    error: errUsr
+                })
+            }
+
+            if(!girlDB) {
+                return res.status(400).json({
+                    ok: false,
+                    message: 'El usuario no existe'
+                  })
+            }
+
+            girlDB.emailVerified = true;
+
+            girlDB.update(girlDB, (errUpdt, userUpdated) => {
+            if(errUpdt) {
+                return res.status(500).json({
+                ok: false,
+                error: errUpdt
+                })
+            }
+    
+                EmailRecover.findOneAndDelete({code: code}, (errDlt, regDeleted) => {
+                    return res.status(200).json({
+                        ok: true,
+                        message: 'Has verificado tu cuenta correctamente, ya puedes iniciar sesión'
+                    })
+                })
+            })
         })
-      }
 
-      userDB.emailVerified = true;
+        
+      } else {
+        userDB.emailVerified = true;
 
-      userDB.update(userDB, (errUpdt, userUpdated) => {
-        if(errUpdt) {
-          return res.status(500).json({
-            ok: false,
-            error: errUpdt
-          })
-        }
-
-        EmailRecover.findOneAndDelete({code: code}, (errDlt, regDeleted) => {
-          return res.status(200).json({
-              ok: true,
-              message: 'Has verificado tu cuenta correctamente, ya puedes iniciar sesión'
-          })
-      })
-
-      })
-    })
+        userDB.update(userDB, (errUpdt, userUpdated) => {
+          if(errUpdt) {
+            return res.status(500).json({
+              ok: false,
+              error: errUpdt
+            })
+          }
+  
+            EmailRecover.findOneAndDelete({code: code}, (errDlt, regDeleted) => {
+                return res.status(200).json({
+                    ok: true,
+                    message: 'Has verificado tu cuenta correctamente, ya puedes iniciar sesión'
+                })
+            })
+        })
+    }
 
   })
 
@@ -458,7 +489,8 @@ app.post('/recover-password', (req, res) => {
                         message: 'La contraseña se ha modificado correctamente'
                     })
                 })
-            })
+                })
+        })
         })
     })
 })

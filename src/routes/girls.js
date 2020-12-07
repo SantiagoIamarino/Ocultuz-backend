@@ -407,6 +407,13 @@ app.post('/login', (req, res) => {
             })
         }
 
+        if(!girlDB.emailVerified) {
+            return res.status(400).json({
+                ok: false,
+                message: 'Tu email no se ha verificado aún, revisa tu correo'
+            })
+        }
+
         if(!bcrypt.compareSync(body.password, girlDB.password)) {
             return res.status(400).json({
                 ok: false,
