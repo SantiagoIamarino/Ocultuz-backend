@@ -31,7 +31,7 @@ app.post('/', (req, res) => {
         const extension = fileNameSplitted[fileNameSplitted.length - 1];
 
         if(allowedExtensions.indexOf(extension) < 0) {
-            cb('La extension no es valida');
+            cb('La extension no es válida');
             return;
         }
 

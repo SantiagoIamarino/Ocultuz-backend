@@ -111,7 +111,12 @@ app.post('/verify-account', (req, res) => {
       })
     }
 
-    const code = bcrypt.hashSync(Math.random().toString(36).substring(10), 10);
+    let code = bcrypt.hashSync(Math.random().toString(36).substring(10), 10);
+
+    if(code.indexOf('/') >= 0) { // Removing "/"
+      code = code.split('/');
+      code = code.join('');
+    }
 
     const emailRecover = new EmailRecover({
       email,
