@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const Girl = require('../models/girl');
 const Purchase = require('../models/purchase');
+const Content = require('../models/content');
 const Subscription = require('../models/subscription');
 
 const AWS = require('aws-sdk');
@@ -20,6 +21,7 @@ const s3 = new AWS.S3({
 });
 
 const jwt = require('jsonwebtoken');
+const girl = require('../models/girl');
 const key = require('../config/vars').key;
 
 const mdAuth = require('../middlewares/auth').verifyToken;
@@ -111,99 +113,213 @@ app.get('/search/:term', (req, res) => {
 
 })
 
-async function validateContent(contents, user) {
+function validateContent(content, user) {
   return new Promise((resolve, reject) => {
-    let contentToShow = [];
 
-    new Promise((endClicle, rejectCicle) => {
-      if(contents.length <= 0) {
-        endClicle();
-      }
+    content.allowed = true;
+      
+    if(user._id != content.girlId) { // Allow if same girl is requesting
+        Purchase.findOne({
+            contentId: content._id,
+            userId: user._id
+        }, (err, contentDB) => {
+            if(err) {
+                reject(err);
+            }
 
-      contents.forEach(async (content, index) => {
-          content.allowed = true;
-      
-          if(user._id != content.girlId) { // Allow if same girl is requesting
-            await Purchase.findOne({
-                contentId: content._id,
-                userId: user._id
-            }, (err, contentDB) => {
-                if(err) {
-                    reject(err);
-                }
-    
-                if(!contentDB) { // Don't show content to user
-                    content.fileUrl = '';
-                    content.allowed = false;
-                }
-    
-                contentToShow.push(content);
-            })
-      
-          } else {
-            contentToShow.push(content);
-          }
+            if(!contentDB) { // Don't show content to user
+                content.fileUrl = '';
+                content.allowed = false;
+            }
 
-          if((index + 1) === contents.length) {
-              endClicle();
-          }
-      
-      });
-    }).then(() => {
-        resolve(contentToShow);
-    })
+            resolve(content);
+        })
+
+    } else {
+        resolve(content);
+    }
   })
   
 }
 
-app.get('/get-content/:girlId', mdAuth, (req, res) => {
+app.post('/get-basic-content/:girlId', mdAuth, (req, res) => {
     const girlId = req.params.girlId;
+    const perPage = req.body.perPage;
+    const page = req.body.page;
 
-    const contentToRetrive = '_id name description banner previewImage status basicContent products nickname';
-
-    Girl.findById(girlId, contentToRetrive, async (err, girl) => {
-        if(err) {
-            return res.status(500).json({
-                ok: false,
-                error: err
-            })
-        }
-
-        if(!girl) {
-          return res.status(400).json({
-              ok: false,
-                message: 'No se ha encontrado ninguna creadora con ese ID'
-            })
-        }
-        Subscription.findOne({
-          girlId,
-          userId: req.user._id
-        }, async (errSubs, subscriptionDB) => {
-
-          if(errSubs) {
-              return res.status(500).json({
+    if(req.user._id != girlId) { //Another user
+        Subscription.findOne({ // Validating subscription
+            girlId,
+            userId: req.user._id
+          }, async (errSubs, subscriptionDB) => {
+    
+            if(errSubs) {
+                return res.status(500).json({
+                    ok: false,
+                    error: errSubs
+                })
+            }
+    
+            if(!subscriptionDB) {
+              return res.status(400).json({
                   ok: false,
-                  error: errSubs
-              })
-          }
+                  message: 'No te encuentras subscripto a esta creadora'
+                })
+            }
 
-          if(!subscriptionDB) {
-            return res.status(400).json({
-                ok: false,
-                message: 'No te encuentras subscripto a esta creadora'
-              })
-          }
+            Content.find({
+                girlId: girlId,
+                type: 'general'
+            })
+            .skip((perPage * page) - perPage)
+            .limit(perPage * page)
+            .exec((errCont, contentsDB) => {
+                if(errCont) {
+                    return res.status(500).json({
+                        ok: false,
+                        error: errCont
+                    })
+                }
 
-          girl.products = await validateContent(girl.products, req.user);
-
-          return res.status(200).json({
-              ok: true,
-              girl
-          })
+                Content.count({
+                    girlId: girlId,
+                    type: 'general'
+                }, (errCount, basicTotal) => {
+        
+                    return res.status(200).json({
+                        ok: true,
+                        basicContent: contentsDB,
+                        basicTotal
+                    })
+                })
+                
+            })
 
         })
-    })
+    } else { // Same user (owner of her content)
+        Content.find({
+            girlId: girlId,
+            type: 'general'
+        })
+        .skip((perPage * page) - perPage)
+        .limit(perPage * page)
+        .exec((errCont, contentsDB) => {
+            if(errCont) {
+                return res.status(500).json({
+                    ok: false,
+                    error: errCont
+                })
+            }
 
+            Content.count({
+                girlId: girlId,
+                type: 'general'
+            }, (errCount, basicTotal) => {
+                return res.status(200).json({
+                    ok: true,
+                    basicContent: contentsDB,
+                    basicTotal
+                })
+            })
+        })
+    } 
+})
+
+app.post('/get-exclusive-content/:girlId', mdAuth, (req, res) => {
+    const girlId = req.params.girlId;
+    const perPage = req.body.perPage;
+    const page = req.body.page;
+
+    let tips = [];
+    let tipsTotal = 0;
+
+    if(req.user._id != girlId) { //Another user
+        Subscription.findOne({
+            girlId,
+            userId: req.user._id
+          }, async (errSubs, subscriptionDB) => {
+    
+            if(errSubs) {
+                return res.status(500).json({
+                    ok: false,
+                    error: errSubs
+                })
+            }
+    
+            if(!subscriptionDB) {
+              return res.status(400).json({
+                  ok: false,
+                  message: 'No te encuentras subscripto a esta creadora'
+                })
+            }
+
+            Content.find({
+                girlId: girlId,
+                type: 'exclusive'
+            })
+            .skip((perPage * page) - perPage)
+            .limit(perPage * page)
+            .exec((errCont, contentsDB) => {
+                if(errCont) {
+                    return res.status(500).json({
+                        ok: false,
+                        error: errCont
+                    })
+                }
+
+                const responses = 
+                    contentsDB.map((content, index) => {
+                        return validateContent(content, req.user);
+                    });
+                
+                Promise.all(responses).then((body) => {
+                    tips = body.filter((contentValidated) => {
+                        return (contentValidated != null || contentValidated != undefined);
+                    });
+
+                    Content.count({
+                        girlId: girlId,
+                        type: 'exclusive'
+                    }, (errCount, tipsTotal) => {
+                        return res.status(200).json({
+                            ok: true,
+                            tips,
+                            tipsTotal
+                        })
+                    })
+                })
+            })
+    
+          })
+    } else {//Same user
+        Content.find({
+            girlId: girlId,
+            type: 'exclusive'
+        })
+        .skip((perPage * page) - perPage)
+        .limit(perPage * page)
+        .exec((errCont, contentsDB) => {
+            if(errCont) {
+                return res.status(500).json({
+                    ok: false,
+                    error: errCont
+                })
+            }
+
+            Content.count({
+                girlId: girlId,
+                type: 'exclusive'
+            }, (errCount, basicTotal) => {
+                return res.status(200).json({
+                    ok: true,
+                    basicContent: contentsDB,
+                    basicTotal
+                })
+            })
+        })
+    } 
+
+    
 })
 
 app.get('/:girlId', [mdAuth, mdSameUser], (req, res) => {
@@ -225,6 +341,8 @@ app.get('/:girlId', [mdAuth, mdSameUser], (req, res) => {
     }
 
     girlDB.password = '';
+    girlDB.basicContent = null;
+    girlDB.products = null;
 
     return res.status(200).json({
       ok: true,
@@ -232,6 +350,37 @@ app.get('/:girlId', [mdAuth, mdSameUser], (req, res) => {
     })
   })
 })
+
+app.get('/profile/:girlId', mdAuth, (req, res) => {
+    const girlId = req.params.girlId;
+
+    const contentToRetrieve = '_id nickname description banner previewImage';
+  
+    Girl.findById(girlId, contentToRetrieve, (err, girlDB) => {
+      if(err) {
+        return res.status(500).json({
+          ok: false,
+          error: err
+        })
+      }
+  
+      if(!girlDB) {
+          return res.status(400).json({
+              ok: false,
+              message: 'No existe esta creadora'
+          })
+      }
+  
+      girlDB.password = '';
+      girlDB.basicContent = null;
+      girlDB.products = null;
+  
+      return res.status(200).json({
+        ok: true,
+        girl: girlDB
+      })
+    })
+  })
 
 app.post('/', (req, res) => {
     const body = req.body;
