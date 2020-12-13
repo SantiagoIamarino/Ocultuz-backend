@@ -231,7 +231,6 @@ app.post('/get-exclusive-content/:girlId', mdAuth, (req, res) => {
     const page = req.body.page;
 
     let tips = [];
-    let tipsTotal = 0;
 
     if(req.user._id != girlId) { //Another user
         Subscription.findOne({
@@ -309,11 +308,12 @@ app.post('/get-exclusive-content/:girlId', mdAuth, (req, res) => {
             Content.count({
                 girlId: girlId,
                 type: 'exclusive'
-            }, (errCount, basicTotal) => {
+            }, (errCount, tipsTotal) => {
+
                 return res.status(200).json({
                     ok: true,
-                    basicContent: contentsDB,
-                    basicTotal
+                    tips: contentsDB,
+                    tipsTotal
                 })
             })
         })
