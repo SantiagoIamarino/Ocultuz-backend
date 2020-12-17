@@ -101,24 +101,43 @@ app.post('/girl-contacts', mdAuth, (req, res) => {
 
 })
 
-app.get('/messages/:contactId', mdAuth, (req, res) => {
+// Get messages
+app.post('/messages/:contactId', mdAuth, (req, res) => {
     const contactId = req.params.contactId;
+    const page = req.body.page;
+    const perPage = req.body.perPage;
 
-    Message.find({
+    Message.count({
         $or:[ {'senderId':req.user._id}, {'email':contactId} ],
         $or:[ {'receiverId':req.user._id}, {'receiverId':contactId} ]
-    })
-    .exec((err, messages) => {
-        if(err) {
+    }, (errCount, totalMessages) => {
+        if(errCount) {
             return res.status(500).json({
                 ok: false,
-                error: err
+                error: errCount
             })
         }
 
-        return res.status(200).json({
-            ok: true,
-            messages
+        let skip = totalMessages - (page * perPage);
+        let limit = perPage;
+
+        if(skip < 0) {
+            limit = perPage + skip;
+            skip = 0;
+        }
+
+        Message.find({
+            $or:[ {'senderId':req.user._id}, {'email':contactId} ],
+            $or:[ {'receiverId':req.user._id}, {'receiverId':contactId} ]
+        })
+        .skip(skip)
+        .limit(limit)
+        .exec((err, messages) => {
+            return res.status(200).json({
+                ok: true,
+                messages,
+                total: totalMessages
+            })
         })
     })
 
