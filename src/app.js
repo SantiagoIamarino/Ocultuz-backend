@@ -2,7 +2,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
-const path = require('path');
+const Message = require('./models/message');
 
 const app = express();
 
@@ -19,15 +19,22 @@ app.use(function(req, res, next) {
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 
+const http = require('http').createServer(app)
+const io = require('socket.io')(http, {
+    cors: {
+        origin: "http://localhost:4200", // -----Change in PROD-----
+        methods: ["GET", "POST"]
+    }
+});
 
 //Importar rutas
-var userRoutes =  require('./routes/users');
-var girlRoutes =  require('./routes/girls');
-var subscriptionRoutes =  require('./routes/subscriptions');
-var emailRoutes =  require('./routes/emails');
-var fileRoutes =  require('./routes/files');
-var contentRoutes =  require('./routes/contents');
-
+const userRoutes =  require('./routes/users');
+const girlRoutes =  require('./routes/girls');
+const subscriptionRoutes =  require('./routes/subscriptions');
+const emailRoutes =  require('./routes/emails');
+const fileRoutes =  require('./routes/files');
+const contentRoutes =  require('./routes/contents');
+const chatRoutes =  require('./routes/chat');
 
 //Conexion db
 // mongoose.connection.openUri('mongodb://localhost:27017/OcultuzDB', (err, res) => {
@@ -45,8 +52,33 @@ app.use('/subscriptions', subscriptionRoutes);
 app.use('/emails', emailRoutes);
 app.use('/files', fileRoutes);
 app.use('/contents', contentRoutes);
+app.use('/chat', chatRoutes);
+
+
+//Socket.io
+io.on('connection', (socket) => {
+    console.log('a user connected');
+
+    socket.on('message', (data) => {
+        const message = new Message(data);
+
+        message.save((err, messageSaved) => {
+            if(!err) {
+                io.emit('message-broadcast', data);
+            } else {
+                console.log(err);   
+            }
+        })
+    });
+
+    socket.on('disconnect', function(){
+        console.log('discccc');
+        socket.leave(socket.room);
+    });
+
+});
 
 //Escuchar peticiones
-app.listen(3000, () => {
+http.listen(3000, () => {
     console.log('Express running on port 3000');
 })
