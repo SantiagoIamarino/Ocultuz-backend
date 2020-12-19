@@ -108,8 +108,10 @@ app.post('/messages/:contactId', mdAuth, (req, res) => {
     const perPage = req.body.perPage;
 
     Message.count({
-        $or:[ {'senderId':req.user._id}, {'email':contactId} ],
-        $or:[ {'receiverId':req.user._id}, {'receiverId':contactId} ]
+        $or:[
+            { $and: [{'senderId':req.user._id}, {'receiverId':contactId}] },
+            { $and: [{'senderId':contactId}, {'receiverId':req.user._id}] },
+        ]
     }, (errCount, totalMessages) => {
         if(errCount) {
             return res.status(500).json({
@@ -127,8 +129,10 @@ app.post('/messages/:contactId', mdAuth, (req, res) => {
         }
 
         Message.find({
-            $or:[ {'senderId':req.user._id}, {'email':contactId} ],
-            $or:[ {'receiverId':req.user._id}, {'receiverId':contactId} ]
+            $or:[
+                { $and: [{'senderId':req.user._id}, {'receiverId':contactId}] },
+                { $and: [{'senderId':contactId}, {'receiverId':req.user._id}] },
+            ]
         })
         .skip(skip)
         .limit(limit)
