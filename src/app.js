@@ -57,7 +57,7 @@ app.use('/chat', chatRoutes);
 
 
 //Socket.io
-io.on('connection', (socket) => {
+io.on('connection', (socket) => {   
     socket.on('message', (data) => {
         const message = new Message(data);
 
