@@ -2,8 +2,30 @@ const express = require('express');
 const mdAuth = require('../middlewares/auth').verifyToken;
 const Subscription = require('../models/subscription');
 const Message = require('../models/message');
+const ChatNotification = require('../models/chat-notification');
 
 const app = express();
+
+function getNewMessages(senderId, receiverId) {
+    return new Promise((resolve, reject) => {
+        ChatNotification.find({
+            senderId,
+            receiverId
+        }, (err, notifications) => {
+            if(err) {
+                console.log(err)
+                reject(err);
+            }
+
+            if(notifications.length > 0) {
+                resolve( true );
+            } else {
+                resolve( false );
+            }
+        })
+    })
+   
+}
 
 // Get user contacts by filter
 app.post('/user-contacts', mdAuth, (req, res) => {
@@ -16,7 +38,7 @@ app.post('/user-contacts', mdAuth, (req, res) => {
         userId: req.user._id
     })
     .populate('girlId')
-    .exec((err, subscriptions) => {
+    .exec(async (err, subscriptions) => {
         if(err) {
             return res.status(500).json({
                 ok: false,
@@ -26,29 +48,45 @@ app.post('/user-contacts', mdAuth, (req, res) => {
 
         let contacts = [];
 
-        subscriptions.forEach(subscription => {
-            subscription.girlId.password = '';
-            subscription.girlId.products = [];
-            subscription.girlId.basicContent = [];
+        new Promise(async (resolve, reject) => {
+            for(const [index, subscription] of subscriptions.entries()) {
+                subscription.girlId.password = '';
+                subscription.girlId.products = [];
+                subscription.girlId.basicContent = [];
+    
+                const hasNewMessages = await getNewMessages(
+                    subscription.girlId._id,
+                    req.user._id
+                );
 
-            contacts.push(subscription.girlId);
-        });
+                const contact = {
+                    ...JSON.parse(JSON.stringify(subscription.girlId)),
+                    newMessages: hasNewMessages
+                };
 
-        if(!term) {
+                contacts.push(contact);
+
+                if((index + 1) == subscriptions.length) {
+                    resolve();
+                };
+            };
+        }).then(() => {
+            if(!term) {
+                return res.status(200).json({
+                    ok: true,
+                    contacts
+                })
+            }
+    
+            contacts = contacts.filter((contact) => {
+                return contact.nickname.search(term) >= 0;
+            })
+    
             return res.status(200).json({
                 ok: true,
                 contacts
             })
-        }
-
-        contacts = contacts.filter((contact) => {
-            return contact.nickname.search(term) >= 0;
-        })
-
-        return res.status(200).json({
-            ok: true,
-            contacts
-        })
+        }).catch((err) => console.log(err));
 
     })
 
@@ -75,28 +113,45 @@ app.post('/girl-contacts', mdAuth, (req, res) => {
 
         let contacts = [];
 
-        subscriptions.forEach(subscription => {
-            subscription.userId.password = '';
+        new Promise(async (resolve, reject) => {
+            for(const [index, subscription] of subscriptions.entries()) {
+                subscription.userId.password = '';
+    
+                const hasNewMessages = await getNewMessages(
+                    subscription.userId._id,
+                    req.user._id
+                );
+    
+                const contact = {
+                    ...JSON.parse(JSON.stringify(subscription.userId)),
+                    newMessages: hasNewMessages
+                };
+    
+                contacts.push(contact);
+                
+                if((index + 1) == subscriptions.length) {
+                    resolve()
+                };
+            };
+        }).then(() => {
 
-            contacts.push(subscription.userId);
-        });
-
-        if(!term) {
+            if(!term) {
+                return res.status(200).json({
+                    ok: true,
+                    contacts
+                })
+            }
+    
+            contacts = contacts.filter((contact) => {
+                return contact.name.search(term) >= 0;
+            })
+    
             return res.status(200).json({
                 ok: true,
                 contacts
             })
-        }
 
-        contacts = contacts.filter((contact) => {
-            return contact.name.search(term) >= 0;
         })
-
-        return res.status(200).json({
-            ok: true,
-            contacts
-        })
-
     })
 
 })
@@ -145,6 +200,29 @@ app.post('/messages/:contactId', mdAuth, (req, res) => {
         })
     })
 
+})
+
+//Delete notification
+app.delete('/notification/:senderId', mdAuth, (req, res) => {
+    const userId = req.user._id;
+    const senderId = req.params.senderId;
+
+    ChatNotification.deleteMany({
+        receiverId: userId,
+        senderId: senderId
+    }, (err, notificationDeleted) => {
+        if(err) {
+            return res.status(500).json({
+                ok: false,
+                error: err
+            })
+        }
+
+        return res.status(200).json({
+            ok: true,
+            message: 'Notification deleted'
+        })
+    })
 })
 
 module.exports = app;

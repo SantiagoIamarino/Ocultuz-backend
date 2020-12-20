@@ -3,6 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const Message = require('./models/message');
+const ChatNotification = require('./models/chat-notification');
 
 const app = express();
 
@@ -57,8 +58,6 @@ app.use('/chat', chatRoutes);
 
 //Socket.io
 io.on('connection', (socket) => {
-    console.log('a user connected');
-
     socket.on('message', (data) => {
         const message = new Message(data);
 
@@ -69,11 +68,12 @@ io.on('connection', (socket) => {
                 console.log(err);   
             }
         })
-    });
 
-    socket.on('disconnect', function(){
-        console.log('discccc');
-        socket.leave(socket.room);
+        const chatNotification = new ChatNotification(data);
+
+        chatNotification.save((err, chatNotification) => {
+            io.emit('message-notification', data);
+        });
     });
 
 });
