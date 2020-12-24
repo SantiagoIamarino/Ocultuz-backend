@@ -50,25 +50,32 @@ app.post('/user-contacts', mdAuth, (req, res) => {
 
         new Promise(async (resolve, reject) => {
             for(const [index, subscription] of subscriptions.entries()) {
-                subscription.girlId.password = '';
-                subscription.girlId.products = [];
-                subscription.girlId.basicContent = [];
+                if(subscription.girlId) {
+                    subscription.girlId.password = '';
+                    subscription.girlId.products = [];
+                    subscription.girlId.basicContent = [];
+        
+                    const hasNewMessages = await getNewMessages(
+                        subscription.girlId._id,
+                        req.user._id
+                    );
     
-                const hasNewMessages = await getNewMessages(
-                    subscription.girlId._id,
-                    req.user._id
-                );
+                    const contact = {
+                        ...JSON.parse(JSON.stringify(subscription.girlId)),
+                        newMessages: hasNewMessages
+                    };
+    
+                    contacts.push(contact);
 
-                const contact = {
-                    ...JSON.parse(JSON.stringify(subscription.girlId)),
-                    newMessages: hasNewMessages
-                };
-
-                contacts.push(contact);
-
-                if((index + 1) == subscriptions.length) {
-                    resolve();
-                };
+                    if((index + 1) == subscriptions.length) {
+                        resolve();
+                    }
+                }else {
+                    if((index + 1) == subscriptions.length) {
+                        resolve();
+                    }
+                }
+                
             };
         }).then(() => {
             if(!term) {

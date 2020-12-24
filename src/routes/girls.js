@@ -4,6 +4,7 @@ const Girl = require('../models/girl');
 const Purchase = require('../models/purchase');
 const Content = require('../models/content');
 const Subscription = require('../models/subscription');
+const Verification = require('../models/verification');
 
 const AWS = require('aws-sdk');
 const multer = require('multer');
@@ -354,7 +355,7 @@ app.get('/:girlId', [mdAuth, mdSameUser], (req, res) => {
 app.get('/profile/:girlId', mdAuth, (req, res) => {
     const girlId = req.params.girlId;
 
-    const contentToRetrieve = '_id nickname description banner previewImage';
+    const contentToRetrieve = '_id nickname description banner previewImage identityVerified';
   
     Girl.findById(girlId, contentToRetrieve, (err, girlDB) => {
       if(err) {
@@ -589,6 +590,109 @@ app.post('/login', (req, res) => {
             token
         })
     })
+})
+
+// Register Verification
+app.post('/verification', (req, res) => {
+    const girlEmail = req.body.email;
+    const girlUrl = req.body.image;
+
+    Girl.findOne({email: girlEmail}, (err, girlDB) => {
+        if(err) {
+            return res.status(500).json({
+                ok: false,
+                error: err
+            })
+        }
+
+        if(!girlDB) {
+            return res.status(400).json({
+                ok: false,
+                message: 'No existe esta creadora'
+            })
+        }
+
+        const verification = new Verification({
+            girl: girlDB._id,
+            url: girlUrl
+        })
+
+        verification.save((errVer, verificationSaved) => {
+            if(errVer) {
+                return res.status(500).json({
+                    ok: false,
+                    error: errVer
+                })
+            }
+
+            return res.status(200).json({
+                ok: true
+            });
+        })
+    })
+})
+
+app.post('/verifications', [mdAuth, mdAdmin], (req, res) => {
+
+    const page = parseInt(req.body.page);
+    const perPage = parseInt(req.body.perPage);
+  
+    Verification.find({})
+    .skip((page - 1) * perPage)
+    .limit(perPage)
+    .populate('girl')
+    .exec((err, verifications) => {
+        if(err) {
+            return res.status(500).json({
+                ok: false,
+                error: err
+            })
+        }
+
+        Verification.count({}, (errCount, total) => {
+            return res.status(200).json({
+                ok: true,
+                verifications,
+                total
+            })
+        })
+    })
+})
+
+app.delete('/verification/:verificationId', [mdAuth, mdAdmin], (req, res) => { 
+  const verificationId = req.params.verificationId;
+
+  Verification.findById(verificationId, (err, verificationDB) => {
+    if(err) {
+      return res.status(500).json({
+        ok: true,
+        error: err
+      })
+    }
+
+    if(!verificationDB) {
+      return res.status(400).json({
+        ok: false,
+        message: 'No existe una verificación con es ID'
+      })
+    }
+
+    verificationDB.delete(async (errDelete, verificationDeleted) => {
+      if(errDelete) {
+        return res.status(500).json({
+          ok: true,
+          error: errDelete
+        })
+      }
+
+      await deleteGirlPhoto(verificationDB.url);
+
+      return res.status(200).json({
+        ok: true,
+        message: 'Registro eliminado correctamente'
+      })
+    })
+  })
 })
 
 module.exports = app;

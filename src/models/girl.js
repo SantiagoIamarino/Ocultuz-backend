@@ -7,6 +7,7 @@ const girlSchema = new Schema({
     nickname: { type: String, required: true },
     email: { type: String, required: true },
     emailVerified: { type: Boolean, default: false },
+    identityVerified: { type: Boolean, default: false },
     role: { type: String, default: 'GIRL_ROLE' },
     phoneNumber: { type: String, required: true },
     password: { type: String, required: true },
