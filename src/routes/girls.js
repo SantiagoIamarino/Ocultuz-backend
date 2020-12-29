@@ -636,8 +636,13 @@ app.post('/verifications', [mdAuth, mdAdmin], (req, res) => {
 
     const page = parseInt(req.body.page);
     const perPage = parseInt(req.body.perPage);
+    let mongooseFilters = {};
+
+    if(req.body.verified !== 'all') {
+        mongooseFilters.verified = (req.body.verified == 'verified') ? true : false;
+    }
   
-    Verification.find({})
+    Verification.find(mongooseFilters)
     .skip((page - 1) * perPage)
     .limit(perPage)
     .populate('girl')
@@ -654,6 +659,41 @@ app.post('/verifications', [mdAuth, mdAdmin], (req, res) => {
                 ok: true,
                 verifications,
                 total
+            })
+        })
+    })
+})
+
+app.post('/verifications/verify-girl', [mdAuth, mdAdmin], (req, res) => {
+    const verificationId = req.body.verificationId;
+
+    Verification.findById(verificationId, (err, verificationDB) => {
+        if(err) {
+            return res.status(500).json({
+                ok: false,
+                error: err
+            })
+        }
+
+        if(!verificationDB) {
+            return res.status(400).json({
+                ok: false,
+                message: 'No existe una verificación con ese ID'
+            })
+        }
+
+        verificationDB.verified = true;
+
+        verificationDB.update(verificationDB, (errVer, verificationUpdated) => {
+            if(errVer) {
+                return res.status(500).json({
+                    ok: false,
+                    error: errVer
+                })
+            }
+
+            return res.status(200).json({
+                ok: true
             })
         })
     })
