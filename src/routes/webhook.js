@@ -15,8 +15,10 @@ app.post('/', (req, res) => {
         if(req.body.transaction.subscription_id) {
             console.log('2');
             const subData = req.body;
+            console.log(subData)
 
-            Subscription.findOne({paymentId: subData.id}, (err, subscriptionDB) => {
+            Subscription.findOne({paymentId: subData.subscription_id}, 
+            (err, subscriptionDB) => {
                 console.log('3');
                 if(err) {
                     console.log(err);
