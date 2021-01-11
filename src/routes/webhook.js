@@ -29,9 +29,9 @@ app.post('/', (req, res) => {
 
                 if(!subscriptionDB) {
                     console.log('No hay sub');
-                    return res.status(200).json({
-                        ok: true
-                    })
+                    // return res.status(200).json({
+                    //     ok: true
+                    // })
                 }
 
                 if(subscriptionDB.paymentData.transaction.id !== subData.transaction.id) {
