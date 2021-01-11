@@ -10,7 +10,7 @@ const openpay = new Openpay(config.openpayId, config.openpayPrivateKey, false);
 
 app.post('/', (req, res) => {
     console.log('entro!2123');
-    if(req.body.type == 'change.succeeded') {
+    if(req.body.type == 'charge.succeeded') {
         console.log('1');
         if(req.body.subscription_id) {
             console.log('2');
