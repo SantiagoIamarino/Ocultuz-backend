@@ -15,9 +15,9 @@ app.post('/', (req, res) => {
         if(req.body.transaction.subscription_id) {
             console.log('2');
             const subData = req.body;
-            console.log(subData)
+            const subscriptionId = subData.transaction.subscription_id;
 
-            Subscription.findOne({paymentId: subData.transaction.subscription_id}, 
+            Subscription.findOne({paymentId: subscriptionId}, 
             (err, subscriptionDB) => {
                 console.log('3');
                 if(err) {
@@ -33,7 +33,6 @@ app.post('/', (req, res) => {
                         ok: true
                     })
                 }
-                console.log(subscriptionDB);
 
                 if(subscriptionDB.paymentData.transaction.id !== subData.transaction.id) {
                     console.log('4');
@@ -43,7 +42,7 @@ app.post('/', (req, res) => {
                     console.log('5');
                     const customerId = subData.transaction.card.customer_id;
 
-                    openpay.customers.subscriptions.get(customerId, subData.id, (errSub, subscription) => {
+                    openpay.customers.subscriptions.get(customerId, subscriptionId, (errSub, subscription) => {
                         if(errSub) {
                             console.log(errSub);
                             return res.status(200).json({
