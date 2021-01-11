@@ -4,6 +4,7 @@ const app = express();
 const Subscription = require('../models/subscription');
 const User = require('../models/user');
 
+const config = require('../config/vars');
 const Openpay = require('openpay');
 const openpay = new Openpay(config.openpayId, config.openpayPrivateKey, false);
 
