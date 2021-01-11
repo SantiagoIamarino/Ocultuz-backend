@@ -6,7 +6,11 @@ const mdSameUser = require('../middlewares/same-user').verifySameUserOrAdmin;
 const Subscription = require('../models/subscription');
 const Purchase = require('../models/purchase');
 const User = require('../models/user');
-const { mongo } = require('mongoose');
+
+const config = require('../config/vars');
+
+const Openpay = require('openpay');
+const openpay = new Openpay(config.openpayId, config.openpayPrivateKey, false);
 
 const app = express();
 
@@ -75,7 +79,7 @@ app.post('/girl-subscriptions/:userId', [mdAuth, mdSameUser], (req, res) => {
 app.post('/', (req, res) => { // Se realiza luego del pago
     const body = req.body;
 
-    User.findById(body.userId, (findErr, userDB) => {
+    User.findById(body.user._id, (findErr, userDB) => {
         if(findErr) {
             return res.status(500).json({
                 ok: false,
@@ -90,53 +94,100 @@ app.post('/', (req, res) => { // Se realiza luego del pago
             })
         }
 
-        if(userDB.subscriptions && userDB.subscriptions.indexOf(body.girlId) < 0){
-            userDB.subscriptions.push(body.girlId);
+        if(userDB.subscriptions && userDB.subscriptions.indexOf(body.girl._id) < 0){
+            userDB.subscriptions.push(body.girl._id);
 
-            const subscriptionData = {
-                userId: body.userId,
-                girlId: body.girlId,
-                type: 'subscription'
-            }
-        
-            const subscription = new Subscription(subscriptionData);
-        
-            subscription.save((err, subscriptionSaved) => {
-                if(err) {
+            const planRequest = {
+                'amount': 10.00,
+                'currency': 'USD',
+                'status_after_retry': 'cancelled',
+                'retry_times': 2,
+                'name': `Subscripción Ocultuz - ${body.girl.nickname} - ${body.user.name}`,
+                'repeat_unit': 'month',
+                'trial_days': '0',
+                'repeat_every': '1'
+            };
+                
+            openpay.plans.create(planRequest, (error, plan) =>{
+                if(error) {
                     return res.status(500).json({
                         ok: false,
-                        error: err
+                        error
                     })
                 }
-
-                // Creating purchase
-
-                const purchase = new Purchase(subscriptionData);
-                
-                purchase.save((purchaseErr, purchaseSaved) => {
-                    if(purchaseErr) {
+        
+                const cardSelected = body.user.cards.find(card => card.default == true);
+        
+                const subscriptionRequest = {
+                    'plan_id': plan.id,
+                    'source_id' : cardSelected.id
+                };
+        
+                openpay.customers.subscriptions.create(
+                    body.user.openPayCustomerId, 
+                    subscriptionRequest, 
+                (errSub, subscription) => {
+                    if(errSub) {
                         return res.status(500).json({
                             ok: false,
-                            error: purchaseErr
+                            error: errSub
                         })
                     }
 
-                    userDB.update(userDB, (updateErr, userUpdated) => {
-                        if(updateErr) {
+                    const daysBeforeCancell = 2;
+
+                    let nextPaymentDueDate = new Date(subscription.period_end_date);
+                    nextPaymentDueDate.setDate(nextPaymentDueDate.getDate() + daysBeforeCancell);
+                   
+                    const subscriptionData = {
+                        userId: body.user._id,
+                        girlId: body.girl._id,
+                        type: 'subscription',
+                        nextPaymentDueDate,
+                        paymentData: subscription
+                    }
+                
+                    const newSubscription = new Subscription(subscriptionData);
+                
+                    newSubscription.save((err, subscriptionSaved) => {
+                        if(err) {
                             return res.status(500).json({
                                 ok: false,
-                                error: updateErr
+                                error: err
                             })
                         }
-            
-                        return res.status(201).json({
-                            ok: true,
-                            user: userDB,
-                            message: 'Te has subscrito correctamente!'
+        
+                        // Creating purchase
+        
+                        const purchase = new Purchase(subscriptionData);
+                        
+                        purchase.save((purchaseErr, purchaseSaved) => {
+                            if(purchaseErr) {
+                                return res.status(500).json({
+                                    ok: false,
+                                    error: purchaseErr
+                                })
+                            }
+        
+                            userDB.update(userDB, (updateErr, userUpdated) => {
+                                if(updateErr) {
+                                    return res.status(500).json({
+                                        ok: false,
+                                        error: updateErr
+                                    })
+                                }
+                    
+                                return res.status(201).json({
+                                    ok: true,
+                                    user: userDB,
+                                    message: 'Te has subscrito correctamente!'
+                                })
+                            })
                         })
                     })
-                })
-            })
+        
+                });
+            });
         } else {
             return res.status(400).json({
                 ok: false,
@@ -172,33 +223,48 @@ app.post('/unsubscribe/:userId', [mdAuth, mdSameUser], (req, res) => {
             })
         }
 
-        Subscription.findByIdAndDelete(body.subscriptionId, (errDel, subscriptionDeleted) => {
-            if(errDel) {
+        Subscription.findById(body.subscriptionId, (errSub, subscriptionDB) => {
+            if(errSub) {
                 return res.status(500).json({
                     ok: false,
-                    error: errDel
+                    error: errSub
                 })
             }
 
-            userDB.subscriptions.splice(userDB.subscriptions.indexOf(body.girlId), 1);
+            openpay.customers.subscriptions.delete(
+                userDB.openPayCustomerId,
+                subscriptionDB.paymentData.id,
+                (errSubCancel, subscriptionCancelled) => {
+                    if(errSubCancel) {
+                        return res.status(500).json({
+                            ok: false,
+                            error: errSubCancel
+                        })
+                    }
 
-            userDB.update(userDB, (errUpdt, userUpdated) => {
-                if(errUpdt) {
-                    return res.status(500).json({
-                        ok: false,
-                        error: errUpdt
+                    subscriptionDB.active = false;
+
+                    subscriptionDB.update(subscriptionDB, (errSubUpdt, subscriptionUpdt) => {
+                        if(errSubUpdt) {
+                            return res.status(500).json({
+                                ok: false,
+                                error: errSubUpdt
+                            })
+                        }
+
+                        delete userDB.password;
+
+                        return res.status(200).json({
+                            ok: true,
+                            message: 'Has cancelado tu subscripción correctamente',
+                            user: userDB
+                        })
                     })
-                }
-
-                delete userDB.password;
-
-                return res.status(200).json({
-                    ok: true,
-                    message: 'Has cancelado tu subscripción correctamente',
-                    user: userDB
                 })
-            })
         })
     })
 })
+
+
+
 module.exports = app;

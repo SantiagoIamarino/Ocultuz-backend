@@ -22,8 +22,15 @@ app.use(bodyParser.json())
 
 const fs = require('fs');
 
-const http = require('http').createServer(app);
-const io = require('socket.io')(http, {
+const httpsOptions = {
+
+    key: fs.readFileSync("/etc/ssl/ocultuz_com.key"),
+
+    cert: fs.readFileSync("/etc/ssl/ocultuz_com.crt"),
+};
+
+const https = require('https').createServer(httpsOptions, app);
+const io = require('socket.io')(https, {
     cors: {
         origin: "*", // -----Change in PROD-----
         methods: ["GET", "POST"]
@@ -38,6 +45,8 @@ const emailRoutes =  require('./routes/emails');
 const fileRoutes =  require('./routes/files');
 const contentRoutes =  require('./routes/contents');
 const chatRoutes =  require('./routes/chat');
+const paymentsRoutes = require('./routes/payments');
+const webhookRoutes = require('./routes/webhook');
 
 //Conexion db
 mongoose.connection.openUri('mongodb://localhost:27017/OcultuzDB', (err, res) => {
@@ -56,6 +65,8 @@ app.use('/emails', emailRoutes);
 app.use('/files', fileRoutes);
 app.use('/contents', contentRoutes);
 app.use('/chat', chatRoutes);
+app.use('/payments', paymentsRoutes);
+app.use('/webhook', webhookRoutes);
 
 
 //Socket.io
@@ -81,6 +92,6 @@ io.on('connection', (socket) => {
 });
 
 //Escuchar peticiones
-http.listen(3000, () => {
-    console.log('Express running on port 3000test');
+https.listen(8433, () => {
+    console.log('Express running on port 8433');
 })

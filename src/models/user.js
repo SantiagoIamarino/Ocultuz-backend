@@ -4,6 +4,7 @@ const Schema = mongoose.Schema;
 
 const userSchema = new Schema({
     name: { type: String, required: [true, 'El nombre es necesario'] },
+    openPayCustomerId: { type: String },
     email: { 
         type: String, 
         required: [true, 'El email es necesario'], 
@@ -17,7 +18,11 @@ const userSchema = new Schema({
     birthDay: { type: String },
     adminRole: { type: String, default: 'SECONDARY' },
     terms: { type: Boolean, default: true },
-    // code: { type: String, required: [true, 'El codigo es necesario'] },
+    address: { type: String },
+    postalCode: { type: String },
+    city: { type: String },
+    country: { type: String },
+    cards: { type: Array, default: [] },
 });
 
 module.exports = mongoose.model('User', userSchema);

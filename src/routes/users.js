@@ -1,12 +1,14 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
+const config = require('../config/vars');
+
 const User = require('../models/user');
 const Girl = require('../models/girl');
 const UserDeleted = require('../models/user-deleted');
 const EmailRecover = require('../models/email-recover');
 
 const jwt = require('jsonwebtoken');
-const key = require('../config/vars').key;
+const key = config.key;
 
 const mdAuth = require('../middlewares/auth').verifyToken;
 const mdSameUser = require('../middlewares/same-user').verifySameUserOrAdmin;
@@ -63,8 +65,9 @@ app.get('/admins', [mdAuth, mdAdmin], (req, res) => {
 app.get('/:userId', [mdAuth, mdSameUser], (req, res) => {
 
     const userId = req.params.userId;
+    const contentToRetrieve =  'name email birthDay role adminRole subscriptions status address postalCode country city openPayCustomerId cards';
 
-    User.findById(userId, 'name email birthDay role adminRole subscriptions status', (err, user) => {
+    User.findById(userId, contentToRetrieve, (err, user) => {
 
         if(err) {
             return res.status(500).json({
@@ -213,6 +216,7 @@ app.put('/:userId', [mdAuth, mdSameUser], (req, res) => {
 
         return res.status(200).json({
             ok: true,
+            user,
             message: 'Usuario modificado correctemente'
         })
     })

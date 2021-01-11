@@ -163,8 +163,28 @@ app.post('/get-basic-content/:girlId', mdAuth, (req, res) => {
     
             if(!subscriptionDB) {
               return res.status(400).json({
-                  ok: false,
-                  message: 'No te encuentras subscripto a esta creadora'
+                    ok: false,
+                    message: 'No te encuentras subscripto a esta creadora'
+              }) 
+            }
+
+            const now = new Date();
+            const subscriptionEnding = new Date(subscriptionDB.nextPaymentDueDate);
+
+            if(now >= subscriptionEnding) {
+
+                subscriptionDB.delete((errDlt, subscriptionDeleted) => {
+                    if(errDlt) {
+                        return res.status(500).json({
+                            ok: false,
+                            error: errDlt
+                        }) 
+                    }
+
+                    return res.status(400).json({
+                        ok: false,
+                        message: 'Tu subscripción ha caducado'
+                    })
                 })
             }
 

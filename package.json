@@ -19,6 +19,7 @@
     "multer-s3": "^2.9.0",
     "nodemailer": "^6.4.15",
     "nodemon": "^2.0.6",
+    "openpay": "^1.0.5",
     "socket.io": "^3.0.4"
   }
 }
