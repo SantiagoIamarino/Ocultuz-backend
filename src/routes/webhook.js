@@ -10,10 +10,13 @@ const openpay = new Openpay(config.openpayId, config.openpayPrivateKey, false);
 
 app.post('/', (req, res) => {
     if(req.body.type == 'change.succeeded') {
+        console.log('1');
         if(req.body.subscription_id) {
+            console.log('2');
             const subData = req.body;
 
             Subscription.findOne({paymentId: subData.id}, (err, subscriptionDB) => {
+                console.log('3');
                 if(err) {
                     console.log(err);
                     return res.status(200).json({
@@ -29,9 +32,11 @@ app.post('/', (req, res) => {
                 }
 
                 if(subscriptionDB.paymentData.transaction.id !== subData.transaction.id) {
+                    console.log('4');
                     subscriptionDB.active = true;
                     subscriptionDB.paymentData.transaction = subData.transaction;
                 } else {
+                    console.log('5');
                     const customerId = subData.transaction.card.customer_id;
 
                     openpay.customers.subscriptions.get(customerId, subData.id, (errSub, subscription) => {
@@ -59,10 +64,8 @@ app.post('/', (req, res) => {
         }
         
     } else {
-        
+        console.log('else');
     }
-
-    Subscription
 })
 
 module.exports = app;
