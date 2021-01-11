@@ -13,7 +13,7 @@ app.post('/', (req, res) => {
     if(req.body.type == 'charge.succeeded') {
         console.log('1');
         console.log(req.body);
-        if(req.body.subscription_id) {
+        if(req.body.transaction.subscription_id) {
             console.log('2');
             const subData = req.body;
 
