@@ -12,6 +12,7 @@ app.post('/', (req, res) => {
     console.log('entro!2123');
     if(req.body.type == 'charge.succeeded') {
         console.log('1');
+        console.log(req.body);
         if(req.body.subscription_id) {
             console.log('2');
             const subData = req.body;
