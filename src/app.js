@@ -42,8 +42,8 @@ const paymentsRoutes = require('./routes/payments');
 const webhookRoutes = require('./routes/webhook');
 
 //Conexion db
-mongoose.connection.openUri('mongodb://localhost:27017/OcultuzDB', (err, res) => {
-// mongoose.connection.openUri('mongodb://ocultuz:Ocultuz12@157.230.215.128:27017/OcultuzDB', (err, res) => {
+// mongoose.connection.openUri('mongodb://localhost:27017/OcultuzDB', (err, res) => {
+mongoose.connection.openUri('mongodb://ocultuz:Ocultuz12@157.230.215.128:27017/OcultuzDB', (err, res) => {
     if (err) throw err;
 
     console.log('Database running fine!');
@@ -85,6 +85,6 @@ io.on('connection', (socket) => {
 });
 
 //Escuchar peticiones
-http.listen(8433, () => {
-    console.log('Express running on port 8433');
+http.listen(8443, () => {
+    console.log('Express running on port 8443');
 })
