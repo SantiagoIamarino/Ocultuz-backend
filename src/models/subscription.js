@@ -8,6 +8,7 @@ const subscriptionSchema = new Schema({
     subscribedSince: { type: Date, default: new Date() },
     nextPaymentDueDate: { type: Date, required: true },
     paymentData: { type: Object, required: true },
+    paymentId: { type: String, require: true },
     active: { type: Boolean, default: true }
 })
 

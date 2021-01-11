@@ -144,6 +144,7 @@ app.post('/', (req, res) => { // Se realiza luego del pago
                         girlId: body.girl._id,
                         type: 'subscription',
                         nextPaymentDueDate,
+                        paymentId: subscription.id,
                         paymentData: subscription
                     }
                 

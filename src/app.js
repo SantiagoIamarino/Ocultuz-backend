@@ -22,15 +22,8 @@ app.use(bodyParser.json())
 
 const fs = require('fs');
 
-const httpsOptions = {
-
-    key: fs.readFileSync("/etc/ssl/ocultuz_com.key"),
-
-    cert: fs.readFileSync("/etc/ssl/ocultuz_com.crt"),
-};
-
-const https = require('https').createServer(httpsOptions, app);
-const io = require('socket.io')(https, {
+const http = require('http').createServer(app);
+const io = require('socket.io')(http, {
     cors: {
         origin: "*", // -----Change in PROD-----
         methods: ["GET", "POST"]
@@ -92,6 +85,6 @@ io.on('connection', (socket) => {
 });
 
 //Escuchar peticiones
-https.listen(8443, () => {
-    console.log('Express running on port 8443');
+http.listen(8433, () => {
+    console.log('Express running on port 8433');
 })
