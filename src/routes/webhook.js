@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 
 const Subscription = require('../models/subscription');
+const Purchase = require('../models/purchase');
 const User = require('../models/user');
 
 const config = require('../config/vars');
@@ -69,7 +70,59 @@ app.post('/', (req, res) => {
                 })
             }
         } else {
-            // console.log(req.body);
+            Purchase.findOne({
+                paymentId: req.body.transaction.id,
+                pending: true
+            }, (err, purchaseDB) => {
+                if(err) {
+                    console.log(err);
+                    return res.status(200).json({
+                        ok: true
+                    })
+                }
+
+                if(!purchaseDB) {
+                    console.log('No hay');
+                    return res.status(200).json({
+                        ok: true
+                    })
+                }
+
+                purchaseDB.pending = false;
+                purchaseDB.update(purchaseDB, (errUpdt, purchaseUpdated) => {
+                    if(errUpdt) {
+                        console.log(errUpdt);
+                        return res.status(200).json({
+                            ok: true
+                        })
+                    }
+
+                    let nextPaymentDueDate = new Date();
+                    nextPaymentDueDate.setMonth(nextPaymentDueDate.getMonth() + 1);
+
+                    const subscription = new Subscription({
+                        userId: purchaseDB.userId,
+                        girlId: purchaseDB.girlId,
+                        nextPaymentDueDate,
+                        paymentData: req.body,
+                        paymentId: purchaseDB.paymentId,
+                        active: true
+                    })
+
+                    subscription.save((errSave, subscriptionSaved) => {
+                        if(errSave) {
+                            console.log(errSave);
+                            return res.status(200).json({
+                                ok: true
+                            })
+                        }
+
+                        return res.status(200).json({
+                            ok: true
+                        })
+                    })
+                })
+            })
         }
        
         
