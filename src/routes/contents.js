@@ -8,6 +8,11 @@ const User = require('../models/user');
 const mdAuth = require('../middlewares/auth').verifyToken;
 const mdSameUser = require('../middlewares/same-user').verifySameUserOrAdmin;
 
+const config = require('../config/vars');
+
+const Openpay = require('openpay');
+const openpay = new Openpay(config.openpayId, config.openpayPrivateKey, false);
+
 const app = express();
 
 app.get('/:contentId', mdAuth, (req, res) => {
@@ -230,32 +235,53 @@ app.put('/buy/:contentId', mdAuth, (req, res) => {
                     ok: false,
                     message: 'No hay registros de subscripciones'
                 })
-            } 
+            }
+            
+            const cardSelected = req.user.cards.find(card => card.default == true);
 
-            // --------------------------------------------
-            //------Verificar vencimiento y pago ACA-------
-            // --------------------------------------------
+            const chargeRequest = {
+                'source_id' : cardSelected.id,
+                'method' : 'card',
+                'currency': 'USD',
+                'amount' : contentDB.amount,
+                'description' : contentDB.description,
+                'device_session_id': req.body.deviceSessionId
+            }
 
-            const newPurchase = new Purchase({
-              girlId: contentDB.girlId,
-              userId,
-              contentId,
-              type: 'product'
-            })
+            openpay.customers.charges.create(
+                req.user.openPayCustomerId,
+                chargeRequest, 
+            (error, charge) => {
+                console.log(charge);
 
-            newPurchase.save((errPurchase, purchaseSaved) => {
-              if(errPurchase ){
-                return res.status(500).json({
-                  ok: false,
-                  error: errPurchase
-                })
-              }
+                if(error) {
+                    return res.status(500).json({
+                        ok: false,
+                        error
+                    })
+                }
 
-              return res.status(200).json({
-                ok: true,
-                message: 'Adquiriste el contenido correctamente'
-              })
-            })
+                const newPurchase = new Purchase({
+                    girlId: contentDB.girlId,
+                    userId,
+                    contentId,
+                    type: 'product'
+                  })
+      
+                  newPurchase.save((errPurchase, purchaseSaved) => {
+                    if(errPurchase ){
+                      return res.status(500).json({
+                        ok: false,
+                        error: errPurchase
+                      })
+                    }
+      
+                    return res.status(200).json({
+                      ok: true,
+                      message: 'Adquiriste el contenido correctamente'
+                    })
+                  })
+            });
         })
     } else {
         return res.status(400).json({

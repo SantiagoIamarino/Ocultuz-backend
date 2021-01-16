@@ -7,7 +7,9 @@ const purchaseSchema = new Schema({
     girlId: { type: Schema.Types.ObjectId, ref: 'Girl', required: true },
     contentId: { type: Schema.Types.ObjectId, ref: 'Content' },
     type: { type: String, required: true },
-    date: { type: Date, default: new Date() }
+    date: { type: Date, default: new Date() },
+    pending: { type: Boolean, default: false  },
+    paymentId: { type: String }
 })
 
 

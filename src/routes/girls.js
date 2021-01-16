@@ -128,7 +128,7 @@ function validateContent(content, user) {
                 reject(err);
             }
 
-            if(!contentDB) { // Don't show content to user
+            if(!contentDB || contentDB.pending) { // Don't show content to user
                 content.fileUrl = '';
                 content.allowed = false;
             }
@@ -372,12 +372,12 @@ app.get('/:girlId', [mdAuth, mdSameUser], (req, res) => {
   })
 })
 
-app.get('/profile/:girlId', mdAuth, (req, res) => {
-    const girlId = req.params.girlId;
+app.get('/profile/:girlNickname', mdAuth, (req, res) => {
+    const girlNickname = req.params.girlNickname;
 
     const contentToRetrieve = '_id nickname description banner previewImage identityVerified';
   
-    Girl.findById(girlId, contentToRetrieve, (err, girlDB) => {
+    Girl.findOne({nickname: girlNickname}, contentToRetrieve, (err, girlDB) => {
       if(err) {
         return res.status(500).json({
           ok: false,

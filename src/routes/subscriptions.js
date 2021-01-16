@@ -134,7 +134,7 @@ app.post('/', (req, res) => { // Se realiza luego del pago
                         })
                     }
 
-                    const daysBeforeCancell = 2;
+                    const daysBeforeCancell = config.daysBeforeCancell;
 
                     let nextPaymentDueDate = new Date(subscription.period_end_date);
                     nextPaymentDueDate.setDate(nextPaymentDueDate.getDate() + daysBeforeCancell);
