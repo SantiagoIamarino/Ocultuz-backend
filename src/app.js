@@ -25,7 +25,11 @@ const fs = require('fs');
 const httpsOptions = {
 
     key: fs.readFileSync("/etc/ssl/ocultuz_com.key"),
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> parent of 9e7bc49... Ready to work in payments
     cert: fs.readFileSync("/etc/ssl/ocultuz_com.crt"),
 };
 
@@ -92,6 +96,11 @@ io.on('connection', (socket) => {
 });
 
 //Escuchar peticiones
+<<<<<<< HEAD
 https.listen(8443, () => {
     console.log('Express running on port 8443');
+=======
+https.listen(3000, () => {
+    console.log('Express running on port 3000test');
+>>>>>>> parent of 9e7bc49... Ready to work in payments
 })
