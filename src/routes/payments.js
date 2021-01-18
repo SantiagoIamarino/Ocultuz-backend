@@ -34,7 +34,7 @@ app.post('/create-user', mdAuth, (req, res) => {
     })
 })
 
-app.post('/add-card', [mdAuth, mdSameUser], (req, res) => {
+app.post('/add-card/:userId', [mdAuth, mdSameUser], (req, res) => {
     const customerId = req.body.customerId;
     const cardRequest = {
         token_id : req.body.cardData.id,
