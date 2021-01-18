@@ -134,6 +134,7 @@ app.post('/store', mdAuth, (req, res) => {
             req.user.openPayCustomerId,
             storeChargeRequest, 
         (error, charge) => {
+            console.log(error);
            if(error) {
                return res.status(400).json({
                    ok: false,

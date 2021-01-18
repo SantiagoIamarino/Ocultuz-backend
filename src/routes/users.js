@@ -83,9 +83,19 @@ app.get('/:userId', [mdAuth, mdSameUser], (req, res) => {
             })
         }
 
+        const payload = {
+            check:  true,
+            user
+        };
+
+        const token = jwt.sign(payload, key, {
+            expiresIn: "3d"
+        });
+
         return res.status(200).json({
             ok: true,
-            user
+            user,
+            token
         })
 
     })
@@ -214,9 +224,19 @@ app.put('/:userId', [mdAuth, mdSameUser], (req, res) => {
             })
         }
 
+        const payload = {
+            check:  true,
+            user
+        };
+
+        const token = jwt.sign(payload, key, {
+            expiresIn: "3d"
+        });
+
         return res.status(200).json({
             ok: true,
             user,
+            token,
             message: 'Usuario modificado correctemente'
         })
     })

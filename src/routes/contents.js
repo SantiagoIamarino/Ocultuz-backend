@@ -252,7 +252,6 @@ app.put('/buy/:contentId', mdAuth, (req, res) => {
                 req.user.openPayCustomerId,
                 chargeRequest, 
             (error, charge) => {
-                console.log(charge);
 
                 if(error) {
                     return res.status(500).json({

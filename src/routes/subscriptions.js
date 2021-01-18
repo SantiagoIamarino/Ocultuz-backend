@@ -98,8 +98,7 @@ app.post('/', (req, res) => { // Se realiza luego del pago
             userDB.subscriptions.push(body.girl._id);
 
             const planRequest = {
-                'amount': 10.00,
-                'currency': 'USD',
+                'amount': body.amount,
                 'status_after_retry': 'cancelled',
                 'retry_times': 2,
                 'name': `Subscripción Ocultuz - ${body.girl.nickname} - ${body.user.name}`,
