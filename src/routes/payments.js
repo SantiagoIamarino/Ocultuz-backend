@@ -34,7 +34,7 @@ app.post('/create-user', mdAuth, (req, res) => {
     })
 })
 
-app.post('/add-card/:userId', [mdAuth, mdSameUser], (req, res) => {
+app.post('/add-card/:userId', mdAuth, (req, res) => {
     const customerId = req.body.customerId;
     const cardRequest = {
         token_id : req.body.cardData.id,
@@ -81,7 +81,7 @@ app.post('/add-card/:userId', [mdAuth, mdSameUser], (req, res) => {
     });
 })
 
-app.post('/remove-card', [mdAuth, mdSameUser], (req, res) => {
+app.post('/remove-card', mdAuth, (req, res) => {
     const body = req.body;
 
     openpay.customers.cards.delete(body.customerId, body.cardId, (err, cardDeleted) => {
@@ -120,7 +120,7 @@ app.post('/remove-card', [mdAuth, mdSameUser], (req, res) => {
     })
 })
 
-app.post('/store', [mdAuth, mdSameUser], (req, res) => {
+app.post('/store', mdAuth, (req, res) => {
     const body = req.body;
 
     if(!body.isSubscription) {
