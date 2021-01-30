@@ -17,8 +17,8 @@ app.use(function(req, res, next) {
 });
 
 //Body parser
-app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
-app.use(bodyParser.json({limit: '50mb'}));
+app.use(bodyParser.urlencoded({limit: '25mb', extended: true}));
+app.use(bodyParser.json({limit: '25mb'}));
 
 const fs = require('fs');
 
