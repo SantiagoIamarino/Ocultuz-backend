@@ -140,7 +140,7 @@ app.post('/purchased/:girlId', [mdAuth, mdSameUser], (req, res) => {
 
 } )
 
-app.post('/', mdAuth, (req, res) => {
+app.post('/add', mdAuth, (req, res) => {
     const body = req.body;
 
     if(body.girlId !== req.user._id) {
@@ -175,10 +175,14 @@ app.post('/', mdAuth, (req, res) => {
                 })
             }
 
+            console.log(girlDB);
+
             if(body.type === 'general') {
+                if(!girlDB.basicContent) {
+                    girlDB.basicContent = [];
+                }
+
                 girlDB.basicContent.push(content);
-            } else {
-                girlDB.products.push(content);
             }
 
             girlDB.update(girlDB, (errUpdt, girlUpdated) => {

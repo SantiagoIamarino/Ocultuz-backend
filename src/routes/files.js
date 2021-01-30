@@ -18,6 +18,8 @@ const allowedExtensions = ['jpg', 'jpeg', 'png', 'jfif', 'gif', 'svg', 'mp4', 'm
 
 const app = express();
 
+const limit = 26843545600; // 25MB
+
 app.post('/', (req, res) => {
 
   const upload = multer({
@@ -41,7 +43,8 @@ app.post('/', (req, res) => {
 
         cb(null, fileName);
       }
-    })
+    }),
+    limits: { fileSize: limit }
   }).array('upload', 1);
 
   upload(req, res, (err) => {
