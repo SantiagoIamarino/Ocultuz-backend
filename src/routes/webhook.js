@@ -99,6 +99,7 @@ app.post('/', (req, res) => {
                     const subscription = new Subscription({
                         userId: purchaseDB.userId,
                         girlId: purchaseDB.girlId,
+                        subscribedSince: new Date(),
                         nextPaymentDueDate,
                         paymentData: req.body,
                         paymentId: purchaseDB.paymentId,

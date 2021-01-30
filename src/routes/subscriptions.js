@@ -142,6 +142,7 @@ app.post('/', (req, res) => { // Se realiza luego del pago
                         userId: body.user._id,
                         girlId: body.girl._id,
                         type: 'subscription',
+                        subscribedSince: new Date(),
                         nextPaymentDueDate,
                         paymentId: subscription.id,
                         paymentData: subscription
