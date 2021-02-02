@@ -134,9 +134,12 @@ app.post('/', (req, res) => { // Se realiza luego del pago
                     }
 
                     const daysBeforeCancell = config.daysBeforeCancell;
+                    const endDateSplitted = subscription.period_end_date.split('-');
 
-                    let nextPaymentDueDate = new Date(subscription.period_end_date);
-                    nextPaymentDueDate.setDate(nextPaymentDueDate.getDate() + daysBeforeCancell);
+                    let nextPaymentDueDate = new Date();
+                    nextPaymentDueDate.setFullYear(endDateSplitted[0]);
+                    nextPaymentDueDate.setMonth(parseInt(endDateSplitted[1]) - 1);
+                    nextPaymentDueDate.setDate(parseInt(endDateSplitted[2]) + daysBeforeCancell);
                    
                     const subscriptionData = {
                         userId: body.user._id,
