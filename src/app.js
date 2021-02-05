@@ -2,8 +2,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
-const Message = require('./models/message');
-const ChatNotification = require('./models/chat-notification');
+const handleSocket = require('./sockets/main');
 
 const app = express();
 
@@ -71,24 +70,7 @@ app.use('/webhook', webhookRoutes);
 
 //Socket.io
 io.on('connection', (socket) => {   
-    socket.on('message', (data) => {
-        const message = new Message(data);
-
-        message.save((err, messageSaved) => {
-            if(!err) {
-                io.emit('message-broadcast', data);
-            } else {
-                console.log(err);   
-            }
-        })
-
-        const chatNotification = new ChatNotification(data);
-
-        chatNotification.save((err, chatNotification) => {
-            io.emit('message-notification', data);
-        });
-    });
-
+    handleSocket(io, socket);
 });
 
 //Escuchar peticiones

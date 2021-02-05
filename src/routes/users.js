@@ -65,7 +65,7 @@ app.get('/admins', [mdAuth, mdAdmin], (req, res) => {
 app.get('/:userId', [mdAuth, mdSameUser], (req, res) => {
 
     const userId = req.params.userId;
-    const contentToRetrieve =  'name email birthDay role adminRole subscriptions status address postalCode country city openPayCustomerId cards';
+    const contentToRetrieve =  'name email birthDay role adminRole subscriptions status address postalCode country city openPayCustomerId cards profileImage';
 
     User.findById(userId, contentToRetrieve, (err, user) => {
 
@@ -347,6 +347,13 @@ app.post('/login', (req, res) => {
             return res.status(400).json({
                 ok: false,
                 message: 'La contraseña es incorrecta'
+            })
+        }
+
+        if(userDB.loginStatus && userDB.loginStatus.logged) {
+            return res.status(400).json({
+                ok: false,
+                message: 'Ya te encuentras logueado, la sesión debe ser única'
             })
         }
 

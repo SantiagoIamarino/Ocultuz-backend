@@ -4,6 +4,7 @@ const Schema = mongoose.Schema;
 
 const userSchema = new Schema({
     name: { type: String, required: [true, 'El nombre es necesario'] },
+    profileImage: { type: String },
     openPayCustomerId: { type: String },
     email: { 
         type: String, 
@@ -23,6 +24,7 @@ const userSchema = new Schema({
     city: { type: String },
     country: { type: String },
     cards: { type: Array, default: [] },
+    loginStatus: { type: Object, default: { logged: false, sessionId: null } }
 });
 
 module.exports = mongoose.model('User', userSchema);
