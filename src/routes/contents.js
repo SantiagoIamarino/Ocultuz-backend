@@ -11,6 +11,7 @@ const mdSameUser = require('../middlewares/same-user').verifySameUserOrAdmin;
 const config = require('../config/vars');
 
 const Openpay = require('openpay');
+const purchase = require('../models/purchase');
 const openpay = new Openpay(config.openpayId, config.openpayPrivateKey, false);
 
 const app = express();
@@ -78,6 +79,72 @@ app.get('/:contentId', mdAuth, (req, res) => {
 
         
     })
+})
+
+//Pending contents
+
+app.get('/pending/notification/:girlId', [mdAuth, mdSameUser], (req, res) => {
+  const girlId = req.params.girlId;
+
+  Purchase.count({
+    type: 'product',
+    hasBeenSent: false,
+    girlId
+  }, (err, notificationTotals) => {
+    if(err) {
+      return res.status(500).json({
+        ok: false,
+        error: err
+      })
+    }
+
+    return res.status(200).json({
+      ok: true,
+      notifications: notificationTotals
+    })
+  })
+})
+
+app.post('/pending/:girlId', [mdAuth, mdSameUser], (req, res) => {
+  const girlId = req.params.girlId;
+  const limit = req.body.limit;
+  const page = req.body.page;
+
+  const mongooseFilters = {
+    type: 'product',
+    hasBeenSent: false,
+    girlId
+  };
+
+  Purchase.find(mongooseFilters)
+  .skip(page * limit - limit)
+  .limit(limit)
+  .populate('userId')
+  .exec((err, contents) => {
+    if(err) {
+      return res.status(500).json({
+        ok: false,
+        error: err
+      })
+    }
+
+    Purchase.count(mongooseFilters , (errCount, notificationTotals) => {
+      if(errCount) {
+        return res.status(500).json({
+          ok: false,
+          error: errCount
+        })
+      }
+
+      return res.status(200).json({
+        ok: true,
+        total: notificationTotals,
+        contents
+      })
+    })
+  })
+
+  
 })
 
 async function getUsersSubscribed(users) {
@@ -203,11 +270,93 @@ app.post('/add', mdAuth, (req, res) => {
     })
 })
 
-app.put('/buy/:contentId', mdAuth, (req, res) => {
-  const contentId = req.params.contentId;
-  const userId = req.user._id;
+app.post('/add-exclusive/:girlId', [mdAuth, mdSameUser], (req, res) => {
+  const fileUrl = req.body.fileUrl;
+  const girlId = req.params.girlId;
+  const userId = req.body.userId;
 
-  Content.findById(contentId, (err, contentDB) => {
+  Purchase.findOne({
+    girlId,
+    userId,
+    hasBeenSent: false
+  }, (err, purchaseDB) => {
+    if(err) {
+      return res.status(500).json({
+        ok: false,
+        error: err
+      })
+    }
+
+    if(!purchaseDB) {
+      return res.status(400).json({
+        ok: false,
+        message: 'No existe una compra que coincida'
+      })
+    }
+
+    if(!fileUrl) {
+      return res.status(400).json({
+        ok: false,
+        message: 'Se debe subir un archivo válido'
+      })
+    }
+
+    purchaseDB.hasBeenSent = true;
+    purchaseDB.contentUrl = fileUrl;
+
+    purchaseDB.update(purchaseDB, (errUpdt, purchaseUpdated) => {
+      if(errUpdt) {
+        return res.status(500).json({
+          ok: false,
+          error: errUpdt
+        })
+      }
+
+      return res.status(200).json({
+        ok: true,
+        message: 'Archivo enviado correctamente'
+      })
+    })
+
+  })
+})
+
+function validateContent(girlDB, contentType) {
+  let isValid = true;
+
+  if(!girlDB.tips) {
+    return false;
+  }
+
+  switch (contentType) {
+    case 'video':
+      if(girlDB.tips.video) {
+        isValid = true;
+      }
+    break;
+  
+    case 'photo':
+      if(girlDB.tips.photo) {
+        isValid = true;
+      }
+    break;
+
+    case 'audio':
+      if(girlDB.tips.audio) {
+        isValid = true;
+      }
+    break;
+  }
+
+  return isValid;
+}
+
+app.post('/buy/:girlId', mdAuth, (req, res) => {
+  const girlId = req.params.girlId;
+  const userId = req.user._id;
+  const content = req.body;
+
+  Girl.findById(girlId, (err, girlDB) => {
     if(err) {
         return res.status(500).json({
             ok: false,
@@ -215,84 +364,87 @@ app.put('/buy/:contentId', mdAuth, (req, res) => {
         })
     }
 
-    if(!contentDB) {
+    if(!girlDB) {
         return res.status(400).json({
             ok: false,
-            message: 'No existe un contenido con esa ID'
+            message: 'No existe una creadora con esa ID'
         })
     }
 
-    if(contentDB.type === 'exclusive') {
-        Subscription.findOne({
-            girlId: contentDB.girlId
-        })
-        .exec((subsErr, subscriptionDB) => {
-            if(subsErr) {
+    Subscription.findOne({
+      girlId: girlDB._id,
+      userId: userId
+    })
+    .exec((subsErr, subscriptionDB) => {
+        if(subsErr) {
+            return res.status(500).json({
+                ok: false,
+                error: subsErr
+            })
+        }
+
+        if(!subscriptionDB) {
+            return res.status(400).json({
+                ok: false,
+                message: 'Debes estar subscripto para realizar esta compra'
+            })
+        }
+
+        const isContentAllowed = validateContent(girlDB, content.type);
+
+        if(!isContentAllowed) {
+          return res.status(400).json({
+            ok: false,
+            message: 'Esa creadora no acepta este tipo de contenido'
+          })
+        }
+        
+        const cardSelected = req.user.cards.find(card => card.default == true);
+
+        const chargeRequest = {
+            'source_id' : cardSelected.id,
+            'method' : 'card',
+            'currency': 'USD',
+            'amount' : content.amount,
+            'description' : content.description,
+            'device_session_id': req.body.deviceSessionId
+        }
+
+        openpay.customers.charges.create(
+            req.user.openPayCustomerId,
+            chargeRequest, 
+        (error, charge) => {
+
+            if(error) {
                 return res.status(500).json({
                     ok: false,
-                    error: subsErr
+                    error
                 })
             }
 
-            if(!subscriptionDB) {
-                return res.status(400).json({
+            const newPurchase = new Purchase({
+                girlId,
+                userId,
+                contentType: content.type,
+                type: 'product'
+              })
+
+              newPurchase.save((errPurchase, purchaseSaved) => {
+                if(errPurchase ){
+                  return res.status(500).json({
                     ok: false,
-                    message: 'No hay registros de subscripciones'
-                })
-            }
-            
-            const cardSelected = req.user.cards.find(card => card.default == true);
-
-            const chargeRequest = {
-                'source_id' : cardSelected.id,
-                'method' : 'card',
-                'currency': 'USD',
-                'amount' : contentDB.amount,
-                'description' : contentDB.description,
-                'device_session_id': req.body.deviceSessionId
-            }
-
-            openpay.customers.charges.create(
-                req.user.openPayCustomerId,
-                chargeRequest, 
-            (error, charge) => {
-
-                if(error) {
-                    return res.status(500).json({
-                        ok: false,
-                        error
-                    })
+                    error: errPurchase
+                  })
                 }
 
-                const newPurchase = new Purchase({
-                    girlId: contentDB.girlId,
-                    userId,
-                    contentId,
-                    type: 'product'
-                  })
-      
-                  newPurchase.save((errPurchase, purchaseSaved) => {
-                    if(errPurchase ){
-                      return res.status(500).json({
-                        ok: false,
-                        error: errPurchase
-                      })
-                    }
-      
-                    return res.status(200).json({
-                      ok: true,
-                      message: 'Adquiriste el contenido correctamente'
-                    })
-                  })
-            });
-        })
-    } else {
-        return res.status(400).json({
-          ok: false,
-          message: 'El contenido general no puede comprarse por separado'
-        })
-    }
-  })
+                return res.status(200).json({
+                  ok: true,
+                  message: 'Adquiriste el contenido correctamente'
+                })
+              })
+        });
+    })
+    })
 })
 
 module.exports = app;

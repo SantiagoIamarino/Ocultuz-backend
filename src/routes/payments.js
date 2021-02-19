@@ -145,7 +145,8 @@ app.post('/store', mdAuth, (req, res) => {
            const purchase = new Purchase({
                 userId: req.user._id,
                 girlId: body.girlId,
-                type: body.type,
+                contentType: body.type,
+                type: 'product',
                 pending: true,
                 paymentId: charge.id
            })

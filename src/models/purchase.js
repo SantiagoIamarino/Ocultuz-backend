@@ -5,11 +5,13 @@ const Schema = mongoose.Schema;
 const purchaseSchema = new Schema({
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     girlId: { type: Schema.Types.ObjectId, ref: 'Girl', required: true },
-    contentId: { type: Schema.Types.ObjectId, ref: 'Content' },
+    contentType: { type: String, ref: 'Content' },
     type: { type: String, required: true },
     date: { type: Date, default: new Date() },
     pending: { type: Boolean, default: false  },
-    paymentId: { type: String }
+    hasBeenSent: { type: Boolean, default: false  },
+    paymentId: { type: String },
+    contentUrl: { type: String, default: null }
 })
 
 

@@ -65,7 +65,6 @@ function handleSocket(io, socket) {
     });
 
     socket.on('disconnect', function (data) {
-        console.log('entro');
         handleUserStatus(
             io,
             socket.request._query.userId, 

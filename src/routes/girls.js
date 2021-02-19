@@ -254,70 +254,30 @@ app.post('/get-exclusive-content/:girlId', mdAuth, (req, res) => {
     const perPage = req.body.perPage;
     const page = req.body.page;
 
-    let tips = [];
+    Subscription.findOne({
+        girlId,
+        userId: req.user._id
+      }, async (errSubs, subscriptionDB) => {
 
-    if(req.user._id != girlId) { //Another user
-        Subscription.findOne({
-            girlId,
-            userId: req.user._id
-          }, async (errSubs, subscriptionDB) => {
-    
-            if(errSubs) {
-                return res.status(500).json({
-                    ok: false,
-                    error: errSubs
-                })
-            }
-    
-            if(!subscriptionDB && req.user.role !== 'ADMIN_ROLE') {
-              return res.status(400).json({
-                  ok: false,
-                  message: 'No te encuentras subscripto a esta creadora'
-                })
-            }
-
-            Content.find({
-                girlId: girlId,
-                type: 'exclusive'
+        if(errSubs) {
+            return res.status(500).json({
+                ok: false,
+                error: errSubs
             })
-            .skip((perPage * page) - perPage)
-            .limit(perPage * page)
-            .exec((errCont, contentsDB) => {
-                if(errCont) {
-                    return res.status(500).json({
-                        ok: false,
-                        error: errCont
-                    })
-                }
+        }
 
-                const responses = 
-                    contentsDB.map((content, index) => {
-                        return validateContent(content, req.user);
-                    });
-                
-                Promise.all(responses).then((body) => {
-                    tips = body.filter((contentValidated) => {
-                        return (contentValidated != null || contentValidated != undefined);
-                    });
-
-                    Content.count({
-                        girlId: girlId,
-                        type: 'exclusive'
-                    }, (errCount, tipsTotal) => {
-                        return res.status(200).json({
-                            ok: true,
-                            tips,
-                            tipsTotal
-                        })
-                    })
-                })
+        if(!subscriptionDB) {
+          return res.status(400).json({
+              ok: false,
+              message: 'No te encuentras subscripto a esta creadora'
             })
-    
-          })
-    } else {//Same user
-        Content.find({
+        }
+
+        Purchase.find({
             girlId: girlId,
-            type: 'exclusive'
+            userId: req.user._id,
+            type: 'product',
+            pending: false
         })
         .skip((perPage * page) - perPage)
         .limit(perPage * page)
@@ -329,11 +289,12 @@ app.post('/get-exclusive-content/:girlId', mdAuth, (req, res) => {
                 })
             }
 
-            Content.count({
+            Purchase.count({
                 girlId: girlId,
-                type: 'exclusive'
+                userId: req.user._id,
+                type: 'product',
+                pending: false
             }, (errCount, tipsTotal) => {
-
                 return res.status(200).json({
                     ok: true,
                     tips: contentsDB,
@@ -341,9 +302,8 @@ app.post('/get-exclusive-content/:girlId', mdAuth, (req, res) => {
                 })
             })
         })
-    } 
 
-    
+      })
 })
 
 app.get('/:girlId', [mdAuth, mdSameUser], (req, res) => {
@@ -378,7 +338,7 @@ app.get('/:girlId', [mdAuth, mdSameUser], (req, res) => {
 app.get('/profile/:girlNickname', mdAuth, (req, res) => {
     const girlNickname = req.params.girlNickname;
 
-    const contentToRetrieve = '_id nickname description banner previewImage identityVerified';
+    const contentToRetrieve = '_id nickname description banner previewImage identityVerified tips';
   
     Girl.findOne({nickname: girlNickname}, contentToRetrieve, (err, girlDB) => {
       if(err) {

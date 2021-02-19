@@ -2,6 +2,12 @@ const mongoose = require('mongoose');
 
 const Schema = mongoose.Schema;
 
+const tipsDefault = {
+    video: false,
+    audio: false,
+    photo: false
+}
+
 const girlSchema = new Schema({
     name: { type: String, required: true },
     nickname: { type: String, required: true },
@@ -21,7 +27,8 @@ const girlSchema = new Schema({
     banner: { type: String },
     previewImage: { type: String },
     basicContent: { type: Array },
-    products: { type: Array }
+    products: { type: Array },
+    tips: { type: Object, default: tipsDefault }
 });
 
 module.exports = mongoose.model('Girl', girlSchema);

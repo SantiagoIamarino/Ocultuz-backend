@@ -93,30 +93,37 @@ app.post('/', (req, res) => {
                         })
                     }
 
-                    let nextPaymentDueDate = new Date();
-                    nextPaymentDueDate.setMonth(nextPaymentDueDate.getMonth() + 1);
+                    if(req.body.transaction.subscription_id) {
 
-                    const subscription = new Subscription({
-                        userId: purchaseDB.userId,
-                        girlId: purchaseDB.girlId,
-                        subscribedSince: new Date(),
-                        nextPaymentDueDate,
-                        paymentData: req.body,
-                        paymentId: purchaseDB.paymentId,
-                        active: true
-                    })
+                        let nextPaymentDueDate = new Date();
+                        nextPaymentDueDate.setMonth(nextPaymentDueDate.getMonth() + 1);
 
-                    subscription.save((errSave, subscriptionSaved) => {
-                        if(errSave) {
+                        const subscription = new Subscription({
+                            userId: purchaseDB.userId,
+                            girlId: purchaseDB.girlId,
+                            subscribedSince: new Date(),
+                            nextPaymentDueDate,
+                            paymentData: req.body,
+                            paymentId: purchaseDB.paymentId,
+                            active: true
+                        })
+
+                        subscription.save((errSave, subscriptionSaved) => {
+                            if(errSave) {
+                                return res.status(200).json({
+                                    ok: true
+                                })
+                            }
+
                             return res.status(200).json({
                                 ok: true
                             })
-                        }
-
+                        })
+                    } else {
                         return res.status(200).json({
                             ok: true
                         })
-                    })
+                    }
                 })
             })
         }
