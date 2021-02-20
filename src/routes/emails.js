@@ -54,7 +54,8 @@ app.post('/recover-password', (req, res) => {
         auth: {
           user: "soporte@ocultuz.com",
           pass: "soporteOcultuz"
-        }
+        },
+        from: 'soporte@ocultuz.com'
       });
   
       let url = 'http://157.230.215.128/#/recuperar-contrasena/';
@@ -151,7 +152,8 @@ app.post('/verify-account', (req, res) => {
       auth: {
         user: "soporte@ocultuz.com",
         pass: "soporteOcultuz"
-      }
+      },
+      from: 'soporte@ocultuz.com'
     });
 
     let url = 'http://157.230.215.128/#/validar-cuenta/';
