@@ -426,7 +426,8 @@ app.post('/buy/:girlId', mdAuth, (req, res) => {
                 girlId,
                 userId,
                 contentType: content.type,
-                type: 'product'
+                type: 'product',
+                amount: content.amount
               })
 
               newPurchase.save((errPurchase, purchaseSaved) => {
