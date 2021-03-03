@@ -13,6 +13,7 @@ const key = config.key;
 const mdAuth = require('../middlewares/auth').verifyToken;
 const mdSameUser = require('../middlewares/same-user').verifySameUserOrAdmin;
 const mdAdmin = require('../middlewares/admin').verifyRole;
+const user = require('../models/user');
 
 const app = express();
 
@@ -65,7 +66,7 @@ app.get('/admins', [mdAuth, mdAdmin], (req, res) => {
 app.get('/:userId', [mdAuth, mdSameUser], (req, res) => {
 
     const userId = req.params.userId;
-    const contentToRetrieve =  'name email birthDay role adminRole subscriptions status address postalCode country city openPayCustomerId cards profileImage';
+    const contentToRetrieve =  'name nickname email birthDay role adminRole subscriptions status address postalCode country city openPayCustomerId cards profileImage';
 
     User.findById(userId, contentToRetrieve, (err, user) => {
 
@@ -83,9 +84,20 @@ app.get('/:userId', [mdAuth, mdSameUser], (req, res) => {
             })
         }
 
+        const userToReturn = {
+            role: user.role,
+            email: user.email,
+            openPayCustomerId: user.openPayCustomerId,
+            _id: user._id,
+            nickname: user.nickname,
+            subscriptions: user.subscriptions,
+            adminRole: user.adminRole,
+            cards: user.cards
+        }
+
         const payload = {
             check:  true,
-            user
+            user: userToReturn
         };
 
         const token = jwt.sign(payload, key, {
@@ -224,9 +236,20 @@ app.put('/:userId', [mdAuth, mdSameUser], (req, res) => {
             })
         }
 
+        const userToReturn = {
+            role: user.role,
+            email: user.email,
+            openPayCustomerId: user.openPayCustomerId,
+            _id: user._id,
+            nickname: user.nickname,
+            subscriptions: user.subscriptions,
+            adminRole: user.adminRole,
+            cards: user.cards
+        }
+
         const payload = {
             check:  true,
-            user
+            user: userToReturn
         };
 
         const token = jwt.sign(payload, key, {
@@ -359,9 +382,20 @@ app.post('/login', (req, res) => {
 
         userDB.password = '';
 
+        const userToReturn = {
+            role: userDB.role,
+            email: userDB.email,
+            openPayCustomerId: userDB.openPayCustomerId,
+            _id: userDB._id,
+            nickname: userDB.nickname,
+            subscriptions: userDB.subscriptions,
+            adminRole: userDB.adminRole,
+            cards: userDB.cards
+        }
+
         const payload = {
             check:  true,
-            user: userDB
+            user: userToReturn
         };
 
         const token = jwt.sign(payload, key, {

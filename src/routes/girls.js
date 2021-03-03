@@ -266,7 +266,7 @@ app.post('/get-exclusive-content/:girlId', mdAuth, (req, res) => {
             })
         }
 
-        if(!subscriptionDB) {
+        if(!subscriptionDB && req.user.role !== 'ADMIN_ROLE') {
           return res.status(400).json({
               ok: false,
               message: 'No te encuentras subscripto a esta creadora'
@@ -511,10 +511,14 @@ app.delete('/:girlId', [mdAuth, mdSameUser], (req, res) => {
                 })
             }
 
-            return res.status(200).json({
-                ok: true,
-                message: 'Creadora eliminada correctemente'
+            Verification.findOneAndDelete({girl: girlDB._id}, (errDelVer, verificationDeleted) => {
+                return res.status(200).json({
+                    ok: true,
+                    message: 'Creadora eliminada correctemente'
+                })
             })
+
+            
         })
     })
 })
@@ -556,9 +560,17 @@ app.post('/login', (req, res) => {
 
         girlDB.password = '';
 
+        const girlToReturn = {
+            role: girlDB.role,
+            _id: girlDB._id,
+            nickname: girlDB.nickname,
+            subscriptions: girlDB.subscriptions,
+            adminRole: girlDB.adminRole
+        }
+
         const payload = {
             check:  true,
-            girl: girlDB
+            girl: girlToReturn
         };
 
         const token = jwt.sign(payload, key, {

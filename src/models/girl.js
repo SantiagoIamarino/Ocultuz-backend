@@ -3,9 +3,18 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const tipsDefault = {
-    video: false,
-    audio: false,
-    photo: false
+    video: {
+        allowed: false,
+        price: 0
+    },
+    audio: {
+        allowed: false,
+        price: 0
+    },
+    photo: {
+        allowed: false,
+        price: 0
+    }
 }
 
 const girlSchema = new Schema({

@@ -48,6 +48,13 @@ app.post('/user-contacts', mdAuth, (req, res) => {
 
         let contacts = [];
 
+        if(subscriptions.length == 0) {
+            return res.status(200).json({
+                ok: true,
+                contacts
+            })
+        }
+
         new Promise(async (resolve, reject) => {
             for(const [index, subscription] of subscriptions.entries()) {
                 if(subscription.girlId) {
@@ -119,6 +126,13 @@ app.post('/girl-contacts', mdAuth, (req, res) => {
         }
 
         let contacts = [];
+
+        if(subscriptions.length == 0) {
+            return res.status(200).json({
+                ok: true,
+                contacts
+            })
+        }
 
         new Promise(async (resolve, reject) => {
             for(const [index, subscription] of subscriptions.entries()) {
