@@ -11,7 +11,8 @@ const purchaseSchema = new Schema({
     pending: { type: Boolean, default: false  },
     hasBeenSent: { type: Boolean, default: false  },
     paymentId: { type: String },
-    contentUrl: { type: String, default: null }
+    contentUrl: { type: String, default: null },
+    amount: { type: String, default: 0 }
 })
 
 

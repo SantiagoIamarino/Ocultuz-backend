@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const Girl = require('../models/girl');
+const User = require('../models/user');
 const Purchase = require('../models/purchase');
 const Content = require('../models/content');
 const Subscription = require('../models/subscription');
@@ -369,44 +370,59 @@ app.get('/profile/:girlNickname', mdAuth, (req, res) => {
 app.post('/', (req, res) => {
     const body = req.body;
 
-    Girl.findOne({email: body.email}, (err, girlDB) => {
-        if(err) {
+    User.findOne({email: body.email}, (errUsr, userDB) => {
+        if(errUsr) {
             return res.status(500).json({
                 ok: false,
-                error: err
+                error: errUsr
             })
         }
 
-        if(girlDB) {
+        if(userDB) {
             return res.status(400).json({
                 ok: false,
                 message: 'El email ya se encuentra registrado'
             })
         }
 
-        body.password = bcrypt.hashSync(body.password, 10);
-
-        const girl = new Girl(body);
-
-        girl.save((err, girlDB) => {
+        Girl.findOne({email: body.email}, (err, girlDB) => {
             if(err) {
                 return res.status(500).json({
                     ok: false,
                     error: err
                 })
             }
-
-            girlDB.password = '';
-
-            return res.status(201).json({
-                ok: true,
-                message: 'Te has registrado correctamente',
-                girlDB
+    
+            if(girlDB) {
+                return res.status(400).json({
+                    ok: false,
+                    message: 'El email ya se encuentra registrado'
+                })
+            }
+    
+            body.password = bcrypt.hashSync(body.password, 10);
+    
+            const girl = new Girl(body);
+    
+            girl.save((err, girlDB) => {
+                if(err) {
+                    return res.status(500).json({
+                        ok: false,
+                        error: err
+                    })
+                }
+    
+                girlDB.password = '';
+    
+                return res.status(201).json({
+                    ok: true,
+                    message: 'Te has registrado correctamente',
+                    girlDB
+                })
             })
         })
     })
 
-    
 })
 
 function deleteGirlPhoto(photo) {

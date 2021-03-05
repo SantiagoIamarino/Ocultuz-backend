@@ -9,24 +9,42 @@ const app = express();
 
 app.post('/recover-password', (req, res) => {
     const email = req.body.email;
+    let userDB;
 
-    User.findOne({email: email}, (err, userDB) => {
-      if(err) {
-        return res.status(500).json({
-          ok: false,
-          error: err
-        })
-      }
+    new Promise((resolve, reject) => {
+      User.findOne({email: email}, (err, userDB) => {
+        if(err) {
+          return res.status(500).json({
+            ok: false,
+            error: err
+          })
+        }
+  
+        if(!userDB) {
+          Girl.findOne({email: email}, (errGirl, girlDB) => {
+            if(err) {
+              return res.status(500).json({
+                ok: false,
+                error: err
+              })
+            }
 
-      if(!userDB) {
-        return res.status(400).json({
-          ok: false,
-          message: 'El email no se encuentra registrado'
-        })
-      }
+            if(!girlDB) {
+              reject('El email no se encuentra registrado');
+            } else{
+              resolve(girlDB);
+            }
+          })
+        } else {
+          resolve(userDB);
+        }
+      })
+    })
+    .then((user) => {
+      userDB = user;
 
       let code = bcrypt.hashSync(Math.random().toString(36).substring(10), 10);
-
+  
       if(code.indexOf('/') >= 0) { // Removing "/"
         code = code.split('/');
         code = code.join('');
@@ -45,7 +63,6 @@ app.post('/recover-password', (req, res) => {
             error: errER
           })
         }
-
         
 
       let transport = nodemailer.createTransport({
@@ -101,6 +118,14 @@ app.post('/recover-password', (req, res) => {
 
       })
     })
+    .catch((error) => {
+      return res.status(400).json({
+        ok: false,
+        message: error
+      })
+    })
+
+   
 })
 
 app.post('/verify-account', (req, res) => {

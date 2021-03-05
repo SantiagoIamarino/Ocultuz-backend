@@ -124,6 +124,7 @@ function createUser(body, res) {
         }
 
         if(userDB) {
+            console.log(userDB);
             return res.status(400).json({
                 ok: false,
                 message: 'El email ya se encuentra registrado'
@@ -157,8 +158,27 @@ app.post('/', (req, res) => {
     const body = req.body;
 
     body.role = 'USER_ROLE';
+    
+    Girl.findOne({email: body.email}, (err, girlDB) => {
+        if(err) {
+            return res.status(500).json({
+                ok: false,
+                error: err
+            })
+        }
 
-    createUser(body, res);
+        if(!girlDB) {
+            createUser(body, res);
+        } else {
+            console.log(girlDB);
+            return res.status(400).json({
+                ok: false,
+                message: "El email ya se encuentra registrado"
+            })
+        }
+    })
+
+    
 })
 
 app.post('/admin', [mdAuth, mdAdmin], (req, res) => {
