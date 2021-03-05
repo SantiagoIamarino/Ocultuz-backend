@@ -375,7 +375,7 @@ app.post('/login', (req, res) => {
         if(!userDB) {
             return res.status(400).json({
                 ok: false,
-                message: 'El email no se encuentra registrado'
+                message: 'Las credenciales son incorrectas'
             })
         }
 
@@ -389,7 +389,7 @@ app.post('/login', (req, res) => {
         if(!bcrypt.compareSync(body.password, userDB.password)) {
             return res.status(400).json({
                 ok: false,
-                message: 'La contraseña es incorrecta'
+                message: 'Las credenciales son incorrectas'
             })
         }
 
