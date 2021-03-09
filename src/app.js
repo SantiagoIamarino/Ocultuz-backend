@@ -18,6 +18,8 @@ app.use(function(req, res, next) {
 //Body parser
 app.use(bodyParser.urlencoded({limit: '25mb', extended: true}));
 app.use(bodyParser.json({limit: '25mb'}));
+var fileupload = require("express-fileupload");
+app.use(fileupload());
 
 const fs = require('fs');
 
