@@ -274,10 +274,12 @@ app.post('/add-exclusive/:girlId', [mdAuth, mdSameUser], (req, res) => {
   const fileUrl = req.body.fileUrl;
   const girlId = req.params.girlId;
   const userId = req.body.userId;
+  const contentId = req.body.contentId;
 
   Purchase.findOne({
     girlId,
     userId,
+    _id: contentId,
     hasBeenSent: false
   }, (err, purchaseDB) => {
     if(err) {

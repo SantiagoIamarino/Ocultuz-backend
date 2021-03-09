@@ -513,10 +513,11 @@ app.get('/validate-account/:code', (req, res) => {
                 })
             })
         })
-    }
+      }
+
+    })
 
   })
-
 })
 
 // Recover Password
@@ -548,14 +549,32 @@ app.post('/recover-password', (req, res) => {
             })
         }
 
-        User.findById(emailRecoverDB.userId, (errUser, userDB) => {
-            if(errUser) {
-                return res.status(500).json({
-                    ok: false,
-                    error: errUser
-                })
-            }
+        new Promise((resolve, reject) => {
+            User.findById(emailRecoverDB.userId, (errUser, userDB) => {
+                if(errUser) {
+                    reject(errUser);
+                }
 
+                if(!userDB) {
+                    Girl.findById(emailRecoverDB.userId, (errGrl, girlDB) => {
+                        if(errGrl) {
+                            reject(errGirl);
+                        }
+
+                        if(!girlDB) {
+                            reject('No existe una creadora con ese id');
+                        } else {
+                            resolve(girlDB)
+                        }
+                    })
+                } else {
+                    resolve(userDB);
+                }
+                
+            })
+        })
+        .then((user) => {
+            const userDB = user;
             const newPassword = bcrypt.hashSync(body.userData.password, 10);
 
             userDB.password = newPassword;
@@ -574,8 +593,13 @@ app.post('/recover-password', (req, res) => {
                         message: 'La contraseña se ha modificado correctamente'
                     })
                 })
-                })
+            })
         })
+        .catch((error) => {
+            return res.status(400).json({
+                ok: false,
+                error
+            })
         })
     })
 })
