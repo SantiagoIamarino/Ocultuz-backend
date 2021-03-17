@@ -76,7 +76,7 @@ app.post('/girl-subscriptions/:userId', [mdAuth, mdSameUser], (req, res) => {
 
 })
 
-app.post('/', (req, res) => { // Se realiza luego del pago
+app.post('/', (req, res) => {
     const body = req.body;
 
     User.findById(body.user._id, (findErr, userDB) => {

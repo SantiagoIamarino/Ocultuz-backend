@@ -3,5 +3,5 @@ module.exports = {
     openpayId: 'm2fxjpfrikgfxatrakxq',
     openpayPrivateKey: 'sk_3c0aeca5b8c34495bc3bde4c1c485262',
     merchantId: 'm2fxjpfrikgfxatrakxq',
-    daysBeforeCancell: 2
+    daysBeforeCancell: 1
 }
