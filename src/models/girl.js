@@ -19,7 +19,8 @@ const tipsDefault = {
 
 const girlSchema = new Schema({
     name: { type: String, required: true },
-    nickname: { type: String, required: true },
+    nickname: { type: String, required: true, unique: true },
+    paypalAccount: { type: String },
     email: { type: String, required: true },
     emailVerified: { type: Boolean, default: false },
     identityVerified: { type: Boolean, default: false },
@@ -28,7 +29,7 @@ const girlSchema = new Schema({
     password: { type: String, required: true },
     description: { type: String },
     birthDay: { type: String, required: true },
-    bankAccountNumber: { type: String, required: true },
+    bankAccountNumber: { type: String},
     instagram: { type: String, required: true },
     status: { type: String, default: 'ACTIVE' },
     social:  { type: Array, required: true },

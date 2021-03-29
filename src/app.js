@@ -21,17 +21,8 @@ app.use(bodyParser.json({limit: '25mb'}));
 var fileupload = require("express-fileupload");
 app.use(fileupload());
 
-const fs = require('fs');
-
-const httpsOptions = {
-
-    key: fs.readFileSync("/etc/ssl/ocultuz_com.key"),
-
-    cert: fs.readFileSync("/etc/ssl/ocultuz_com.crt"),
-};
-
-const https = require('https').createServer(httpsOptions, app);
-const io = require('socket.io')(https, {
+const http = require('http').createServer(app);
+const io = require('socket.io')(http, {
     cors: {
         origin: "*", // -----Change in PROD-----
         methods: ["GET", "POST"]
@@ -50,8 +41,8 @@ const paymentsRoutes = require('./routes/payments');
 const webhookRoutes = require('./routes/webhook');
 
 //Conexion db
-// mongoose.connection.openUri('mongodb://localhost:27017/OcultuzDB', (err, res) => {
-mongoose.connection.openUri('mongodb://ocultuz:Ocultuz12@157.230.215.128:27017/OcultuzDB', (err, res) => {
+mongoose.connection.openUri('mongodb://localhost:27017/OcultuzDB', (err, res) => {
+// mongoose.connection.openUri('mongodb://ocultuz:Ocultuz12@157.230.215.128:27017/OcultuzDB', (err, res) => {
     if (err) throw err;
 
     console.log('Database running fine!');
@@ -76,6 +67,6 @@ io.on('connection', (socket) => {
 });
 
 //Escuchar peticiones
-https.listen(8443, () => {
+http.listen(8443, () => {
     console.log('Express running on port 8443');
 })

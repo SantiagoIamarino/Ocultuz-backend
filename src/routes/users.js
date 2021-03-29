@@ -66,7 +66,7 @@ app.get('/admins', [mdAuth, mdAdmin], (req, res) => {
 app.get('/:userId', [mdAuth, mdSameUser], (req, res) => {
 
     const userId = req.params.userId;
-    const contentToRetrieve =  'name nickname email birthDay role adminRole subscriptions status address postalCode country city openPayCustomerId cards profileImage';
+    const contentToRetrieve =  'name nickname email birthDay role adminRole subscriptions status address postalCode country city openPayCustomerId cards profileImage phoneNumber';
 
     User.findById(userId, contentToRetrieve, (err, user) => {
 
@@ -85,6 +85,7 @@ app.get('/:userId', [mdAuth, mdSameUser], (req, res) => {
         }
 
         const userToReturn = {
+            phoneNumber: user.phoneNumber,
             role: user.role,
             email: user.email,
             openPayCustomerId: user.openPayCustomerId,
@@ -257,6 +258,7 @@ app.put('/:userId', [mdAuth, mdSameUser], (req, res) => {
         }
 
         const userToReturn = {
+            phoneNumber: user.phoneNumber,
             role: user.role,
             email: user.email,
             openPayCustomerId: user.openPayCustomerId,
@@ -403,6 +405,7 @@ app.post('/login', (req, res) => {
         userDB.password = '';
 
         const userToReturn = {
+            phoneNumber: userDB.phoneNumber,
             role: userDB.role,
             email: userDB.email,
             openPayCustomerId: userDB.openPayCustomerId,

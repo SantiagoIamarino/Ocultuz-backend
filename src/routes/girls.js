@@ -34,7 +34,7 @@ const app = express();
 
 app.get('/', (req, res) => {
 
-    Girl.find({}, '_id previewImage nickname', (err, girls) => {
+    Girl.find({}, '_id previewImage nickname status', (err, girls) => {
 
         if(err) {
             return res.status(500).json({
@@ -57,9 +57,18 @@ app.post('/admin', (req, res) => { //Get girls by filters
   const filters = req.body.filters;
   const regex = new RegExp( filters.text, 'i' );
 
-  const mongooseFilters = {
-    $or:[ {'name':regex}, {'email':regex} ],
-    status: filters.status
+  let mongooseFilters = {};
+
+  if(filters.status !== 'ACTIVE') {
+    mongooseFilters = {
+        $or:[ {'name':regex}, {'email':regex} ],
+        status: filters.status
+    }
+  } else {
+    mongooseFilters = {
+        $or:[ {'name':regex}, {'email':regex} ],
+        $or:[ {'status':'ACTIVE'}, {'status':'PENDING'} ],
+    }
   }
 
   const page = parseInt(req.body.pagination.page);
@@ -339,7 +348,7 @@ app.get('/:girlId', [mdAuth, mdSameUser], (req, res) => {
 app.get('/profile/:girlNickname', mdAuth, (req, res) => {
     const girlNickname = req.params.girlNickname;
 
-    const contentToRetrieve = '_id nickname description banner previewImage identityVerified tips';
+    const contentToRetrieve = '_id nickname description status banner previewImage identityVerified tips paypalAccount';
   
     Girl.findOne({nickname: girlNickname}, contentToRetrieve, (err, girlDB) => {
       if(err) {
@@ -385,7 +394,10 @@ app.post('/', (req, res) => {
             })
         }
 
-        Girl.findOne({email: body.email}, (err, girlDB) => {
+        Girl.findOne({
+            email: body.email,
+            nickname: body.nickname
+        }, (err, girlDB) => {
             if(err) {
                 return res.status(500).json({
                     ok: false,
@@ -396,7 +408,7 @@ app.post('/', (req, res) => {
             if(girlDB) {
                 return res.status(400).json({
                     ok: false,
-                    message: 'El email ya se encuentra registrado'
+                    message: 'El email o nombre de usuario ya se encuentra registrado'
                 })
             }
     
