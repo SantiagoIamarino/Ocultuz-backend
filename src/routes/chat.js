@@ -136,22 +136,23 @@ app.post('/girl-contacts', mdAuth, (req, res) => {
 
         new Promise(async (resolve, reject) => {
             for(const [index, subscription] of subscriptions.entries()) {
-                subscription.userId.password = '';
-    
-                const hasNewMessages = await getNewMessages(
-                    subscription.userId._id,
-                    req.user._id
-                );
-    
-                const contact = {
-                    ...JSON.parse(JSON.stringify(subscription.userId)),
-                    newMessages: hasNewMessages
-                };
-    
-                contacts.push(contact);
+                if(subscription.userId){
+                    subscription.userId.password = '';
+                    const hasNewMessages = await getNewMessages(
+                        subscription.userId._id,
+                        req.user._id
+                    );
+        
+                    const contact = {
+                        ...JSON.parse(JSON.stringify(subscription.userId)),
+                        newMessages: hasNewMessages
+                    };
+        
+                    contacts.push(contact);
+                }
                 
                 if((index + 1) == subscriptions.length) {
-                    resolve()
+                    resolve();
                 };
             };
         }).then(() => {
@@ -172,6 +173,9 @@ app.post('/girl-contacts', mdAuth, (req, res) => {
                 contacts
             })
 
+        })
+        .catch((error) => {
+            console.log(error);
         })
     })
 
