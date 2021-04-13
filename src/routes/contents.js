@@ -242,8 +242,6 @@ app.post('/add', mdAuth, (req, res) => {
                 })
             }
 
-            console.log(girlDB);
-
             if(body.type === 'general') {
                 if(!girlDB.basicContent) {
                     girlDB.basicContent = [];
@@ -429,7 +427,8 @@ app.post('/buy/:girlId', mdAuth, (req, res) => {
                 userId,
                 contentType: content.type,
                 type: 'product',
-                amount: content.amount
+                amount: content.amount,
+                date: new Date()
               })
 
               newPurchase.save((errPurchase, purchaseSaved) => {

@@ -125,7 +125,6 @@ function createUser(body, res) {
         }
 
         if(userDB) {
-            console.log(userDB);
             return res.status(400).json({
                 ok: false,
                 message: 'El email ya se encuentra registrado'
@@ -171,7 +170,6 @@ app.post('/', (req, res) => {
         if(!girlDB) {
             createUser(body, res);
         } else {
-            console.log(girlDB);
             return res.status(400).json({
                 ok: false,
                 message: "El email ya se encuentra registrado"
