@@ -378,7 +378,6 @@ app.get('/profile/:girlNickname', mdAuth, (req, res) => {
 
 app.post('/', (req, res) => {
     const body = req.body;
-
     User.findOne({email: body.email}, (errUsr, userDB) => {
         if(errUsr) {
             return res.status(500).json({
@@ -395,8 +394,7 @@ app.post('/', (req, res) => {
         }
 
         Girl.findOne({
-            email: body.email,
-            nickname: body.nickname
+            $or: [ { email: body.email }, { nickname: body.nickname} ] 
         }, (err, girlDB) => {
             if(err) {
                 return res.status(500).json({
