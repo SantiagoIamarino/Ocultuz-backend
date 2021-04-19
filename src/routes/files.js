@@ -14,7 +14,7 @@ const s3 = new AWS.S3({
     secretAccessKey: process.env.SPACES_SECRET
 });
 
-const allowedExtensions = ['jpg', 'jpeg', 'png', 'jfif', 'gif', 'svg', 'mp4', 'webm', 'mp3' , 'flac', 'acc'];
+const allowedExtensions = ['jpg', 'jpeg', 'png', 'jfif', 'gif', 'svg', 'mp4', 'webm', 'mp3' , 'flac', 'wav'];
 
 const app = express();
 
@@ -27,10 +27,16 @@ app.post('/', (req, res) => {
   const extension = fileNameSplitted[fileNameSplitted.length - 1];
 
   if(allowedExtensions.indexOf(extension) < 0) {
-        return res.status(400).json({
-          ok: false,
-          message: "La extension no es valida"
-      })
+    let message = "La extension no es valida";
+
+    if(req.files.upload.mimetype.indexOf('audio') >= 0) {
+      message = "Sólo se admiten archivos de audio .wav, .mp3 o .flac";
+    }
+    
+    return res.status(400).json({
+      ok: false,
+      message
+    })
   }
 
   fileName = `${new Date().getTime()}_${fileName}`;
