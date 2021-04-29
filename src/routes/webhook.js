@@ -93,7 +93,7 @@ app.post('/', (req, res) => {
                         })
                     }
 
-                    if(req.body.transaction.subscription_id) {
+                    if(purchaseDB.contentType == 'subscription') {
 
                         let nextPaymentDueDate = new Date();
                         nextPaymentDueDate.setMonth(nextPaymentDueDate.getMonth() + 1);
