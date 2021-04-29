@@ -37,8 +37,7 @@ app.post('/create-user', mdAuth, (req, res) => {
 app.post('/add-card/:userId', mdAuth, (req, res) => {
     const customerId = req.body.customerId;
     const cardRequest = {
-        token_id : req.body.cardData.id,
-        'device_session_id' : 'sadasdasda13131da'
+        token_id : req.body.cardData.id
     }
       
     openpay.customers.cards.create(customerId, cardRequest, (error, card) =>  {
@@ -120,50 +119,68 @@ app.post('/remove-card', mdAuth, (req, res) => {
     })
 })
 
+function createStoreCharge(openPayCustomerId, storeChargeRequest) {
+    return new Promise((resolve, reject) => {
+        openpay.customers.charges.create(
+            openPayCustomerId,
+            storeChargeRequest, 
+        (error, charge) => {
+            if(error) {
+                reject(error);
+            } else {
+                resolve(charge);
+            }
+        });
+    })
+   
+}
+
 app.post('/store', mdAuth, (req, res) => {
     const body = req.body;
 
+    let storeChargeRequest;
+
     if(!body.isSubscription) {
-        const storeChargeRequest = {
+        storeChargeRequest = {
             'method' : 'store',
             'amount' : body.amount,
             'description' : 'Contenido Ocultuz: ' + body.description
-         };
-         
-        openpay.customers.charges.create(
-            req.user.openPayCustomerId,
-            storeChargeRequest, 
-        (error, charge) => {
-            console.log(error);
-           if(error) {
-               return res.status(400).json({
-                   ok: false,
-                   error
-               })
-           }
+        };
+    }
 
-           const purchase = new Purchase({
+    if(body.isSubscription) {
+        storeChargeRequest = {
+            'method' : 'store',
+            'amount' : body.amount,
+            'description' : 'Contenido Ocultuz: ' + body.description
+        };
+    }
+
+    createStoreCharge(req.user.openPayCustomerId, storeChargeRequest)
+        .then((charge) => {
+
+            const purchase = new Purchase({
                 userId: req.user._id,
                 girlId: body.girlId,
                 contentType: body.type,
                 type: 'product',
                 pending: true,
                 paymentId: charge.id
-           })
+            })
 
-           if(body._id) {
-               purchase.contentId = body._id;
-           }
+            if(body._id) {
+                purchase.contentId = body._id;
+            }
 
-           purchase.save((err, purchaseSaved) => {
-               if(err) {
-                   return res.status(500).json({
-                       ok: false,
-                       error: err
-                   })
-               }
+            purchase.save((err, purchaseSaved) => {
+                if(err) {
+                    return res.status(500).json({
+                        ok: false,
+                        error: err
+                    })
+                }
 
-               //Sending payment info email
+                //Sending payment info email
 
                 let transport = nodemailer.createTransport({
                     host: "smtpout.secureserver.net",
@@ -205,7 +222,7 @@ app.post('/store', mdAuth, (req, res) => {
                 }
             
                 transport.sendMail(message, function(err, info) {
-                    console.log(err, info);
+                    console.log(err);
                     if (err) {
                         return res.status(500).json({
                             ok: false,
@@ -221,8 +238,13 @@ app.post('/store', mdAuth, (req, res) => {
 
                 
             })
-        });
-    }
+        })
+        .catch((error) => {
+            return res.status(400).json({
+                ok: false,
+                error
+            })
+        })
 })
 
 
