@@ -116,8 +116,19 @@ app.post('/', (req, res) => {
                                 })
                             }
 
-                            return res.status(200).json({
-                                ok: true
+                            User.findOne({id: purchaseDB.userId}, (errSubs, userDB) => {
+                                if(userDB.subscriptions && userDB.subscriptions.indexOf(purchaseDB.girlId) < 0) {
+                                    userDB.subscriptions.push(purchaseDB.girlId);
+                                    userDB.update(userDB, (errUpdtSub, userUpdated) => {
+                                        return res.status(200).json({
+                                            ok: true
+                                        })
+                                    })
+                                }
+
+                                return res.status(200).json({
+                                    ok: true
+                                })
                             })
                         })
                     } else {
