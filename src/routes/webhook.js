@@ -10,6 +10,7 @@ const Openpay = require('openpay');
 const openpay = new Openpay(config.openpayId, config.openpayPrivateKey, false);
 
 app.post('/', (req, res) => {
+	console.log(req.body);
     if(req.body.type == 'charge.succeeded') {
         if(req.body.transaction.method == 'card') {
             if(req.body.transaction.subscription_id) {
