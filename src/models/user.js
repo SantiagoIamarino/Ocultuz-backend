@@ -7,7 +7,7 @@ const userSchema = new Schema({
     profileImage: { type: String },
     openPayCustomerId: { type: String },
     paypalAccount: { type: String },
-    phoneNumber: { type: String, required: [true, 'El teléfono es necesario'] },
+    phoneNumber: { type: String },
     email: { 
         type: String, 
         required: [true, 'El email es necesario'], 
