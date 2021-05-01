@@ -115,7 +115,12 @@ app.post('/', (req, res) => {
                                 })
                             }
 
-                            User.findOne({id: purchaseDB.userId}, (errSubs, userDB) => {
+                            User.findById(purchaseDB.userId, (errSubs, userDB) => {
+                                if(!userDB) {
+                                    return res.status(200).json({
+                                        ok: true
+                                    })
+                                }
                                 if(userDB.subscriptions && userDB.subscriptions.indexOf(purchaseDB.girlId) < 0) {
                                     userDB.subscriptions.push(purchaseDB.girlId);
                                     userDB.update(userDB, (errUpdtSub, userUpdated) => {
@@ -123,11 +128,11 @@ app.post('/', (req, res) => {
                                             ok: true
                                         })
                                     })
+                                } else {
+                                    return res.status(200).json({
+                                        ok: true
+                                    })
                                 }
-
-                                return res.status(200).json({
-                                    ok: true
-                                })
                             })
                         })
                     } else {
