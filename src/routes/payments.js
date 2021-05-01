@@ -11,7 +11,6 @@ const Openpay = require('openpay');
 const openpay = new Openpay(config.openpayId, config.openpayPrivateKey, false);
 
 const mdAuth = require('../middlewares/auth').verifyToken;
-const mdSameUser = require('../middlewares/same-user').verifySameUserOrAdmin;
 
 app.post('/create-user', mdAuth, (req, res) => {
     const customerRequest = {
