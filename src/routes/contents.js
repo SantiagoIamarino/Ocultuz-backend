@@ -88,6 +88,7 @@ app.get('/pending/notification/:girlId', [mdAuth, mdSameUser], (req, res) => {
 
   Purchase.count({
     type: 'product',
+    contentType: { $ne: 'subscription' },
     hasBeenSent: false,
     girlId
   }, (err, notificationTotals) => {
@@ -112,6 +113,7 @@ app.post('/pending/:girlId', [mdAuth, mdSameUser], (req, res) => {
 
   const mongooseFilters = {
     type: 'product',
+    contentType: { $ne: 'subscription' },
     hasBeenSent: false,
     girlId
   };

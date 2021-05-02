@@ -287,6 +287,7 @@ app.post('/get-exclusive-content/:girlId', mdAuth, (req, res) => {
             girlId: girlId,
             userId: req.user._id,
             type: 'product',
+            contentType: { $ne: 'subscription' },
             pending: false
         })
         .skip((perPage * page) - perPage)
