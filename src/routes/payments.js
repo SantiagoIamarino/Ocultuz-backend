@@ -36,7 +36,8 @@ app.post('/create-user', mdAuth, (req, res) => {
 app.post('/add-card/:userId', mdAuth, (req, res) => {
     const customerId = req.body.customerId;
     const cardRequest = {
-        token_id : req.body.cardData.id
+        token_id : req.body.cardData.id,
+        device_session_id: req.body.deviceSessionId
     }
       
     openpay.customers.cards.create(customerId, cardRequest, (error, card) =>  {
