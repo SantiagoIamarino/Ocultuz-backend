@@ -10,44 +10,38 @@ const config = require('../config/vars');
 const Openpay = require('openpay');
 const openpay = new Openpay(config.openpayId, config.openpayPrivateKey, false);
 
+const mercadopago = require('mercadopago');
+mercadopago.configure({
+    access_token: config.mpAccessToken
+});
+
 const mdAuth = require('../middlewares/auth').verifyToken;
 
 app.post('/create-user', mdAuth, (req, res) => {
     const customerRequest = {
-        name: req.body.name,
         email: req.body.email
     }
 
-    openpay.customers.create(customerRequest, (err, customer) => {
-        if(err) {
-            return res.status(500).json({
-                ok: false,
-                error: err
-            })
-        }
-
+    mercadopago.customers.create(customerRequest).then((customer) => {
         return res.status(200).json({
             ok: true,
             customer
+        })
+    }).catch(err => {
+        return res.status(500).json({
+            ok: false,
+            error: err
         })
     })
 })
 
 app.post('/add-card/:userId', mdAuth, (req, res) => {
-    const customerId = req.body.customerId;
     const cardRequest = {
-        token_id : req.body.cardData.id,
-        device_session_id: req.body.deviceSessionId
+        token : req.body.mercadopago.token,
+        customer_id: req.body.mercadopago.customerId
     }
       
-    openpay.customers.cards.create(customerId, cardRequest, (error, card) =>  {
-        if(error) {
-            return res.status(500).json({
-                ok: false,
-                error
-            })
-        }
-
+    mercadopago.card.create(cardRequest).then((card) =>  {
         User.findById(req.user._id, (err, userDB) => {
             if(err) {
                 return res.status(500).json({
@@ -57,7 +51,7 @@ app.post('/add-card/:userId', mdAuth, (req, res) => {
             }
 
             const cardData = {
-                ...card,
+                ...card.body,
                 default: (userDB.cards.length > 0) ? false : true
             }
 
@@ -77,13 +71,19 @@ app.post('/add-card/:userId', mdAuth, (req, res) => {
                 })
             })
         })
+    }).catch((err) => {
+        console.log(err);
+        return res.status(500).json({
+            ok: false,
+            err
+        })
     });
 })
 
 app.post('/remove-card', mdAuth, (req, res) => {
     const body = req.body;
 
-    openpay.customers.cards.delete(body.customerId, body.cardId, (err, cardDeleted) => {
+    mercadopago.customers.cards.delete(body.customerId, body.cardId, (err, cardDeleted) => {
         if(err) {
             return res.status(500).json({
                 ok: false,
@@ -119,10 +119,10 @@ app.post('/remove-card', mdAuth, (req, res) => {
     })
 })
 
-function createStoreCharge(openPayCustomerId, storeChargeRequest) {
+function createStoreCharge(customerId, storeChargeRequest) {
     return new Promise((resolve, reject) => {
         openpay.customers.charges.create(
-            openPayCustomerId,
+            customerId,
             storeChargeRequest, 
         (error, charge) => {
             if(error) {
@@ -156,7 +156,7 @@ app.post('/store', mdAuth, (req, res) => {
         };
     }
 
-    createStoreCharge(req.user.openPayCustomerId, storeChargeRequest)
+    createStoreCharge(req.user.customerId, storeChargeRequest)
         .then((charge) => {
 
             const purchase = new Purchase({

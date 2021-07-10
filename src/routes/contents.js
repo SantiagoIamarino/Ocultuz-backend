@@ -413,7 +413,7 @@ app.post('/buy/:girlId', mdAuth, (req, res) => {
         }
 
         openpay.customers.charges.create(
-            req.user.openPayCustomerId,
+            req.user.customerId,
             chargeRequest, 
         (error, charge) => {
 

@@ -5,7 +5,7 @@ const Schema = mongoose.Schema;
 const userSchema = new Schema({
     name: { type: String, required: [true, 'El nombre es necesario'] },
     profileImage: { type: String },
-    openPayCustomerId: { type: String },
+    customerId: { type: String },
     paypalAccount: { type: String },
     phoneNumber: { type: String },
     email: { 
