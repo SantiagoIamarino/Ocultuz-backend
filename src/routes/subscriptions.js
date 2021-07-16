@@ -123,7 +123,7 @@ app.post('/', (req, res) => {
                 };
         
                 openpay.customers.subscriptions.create(
-                    body.user.openPayCustomerId, 
+                    body.user.customerId, 
                     subscriptionRequest, 
                 (errSub, subscription) => {
                     if(errSub) {
@@ -236,7 +236,7 @@ app.post('/unsubscribe/:userId', [mdAuth, mdSameUser], (req, res) => {
             }
 
             openpay.customers.subscriptions.delete(
-                userDB.openPayCustomerId,
+                userDB.customerId,
                 subscriptionDB.paymentData.id,
                 (errSubCancel, subscriptionCancelled) => {
                     if(errSubCancel) {
