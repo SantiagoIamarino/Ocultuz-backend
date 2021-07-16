@@ -1,4 +1,5 @@
 const express =  require('express');
+const axios = require('axios');
 
 const mdAuth = require('../middlewares/auth').verifyToken;
 const mdSameUser = require('../middlewares/same-user').verifySameUserOrAdmin;
@@ -76,10 +77,41 @@ app.post('/girl-subscriptions/:userId', [mdAuth, mdSameUser], (req, res) => {
 
 })
 
+function createPlan() {
+    return new Promise((resolve, reject) => {
+        const planRequest = {
+            "back_url":"https://www.mercadopago.com.ar",
+            "reason":"Plan Pase Mensual Gold",
+            "auto_recurring":{
+                "frequency":"1",
+                "frequency_type":"months",
+                "transaction_amount":1100,
+                "currency_id":"ARS",
+                "repetitions":12,
+                "free_trial":{
+                    "frequency_type":"months",
+                    "frequency":"1"
+                }
+            }
+        };
+    
+        axios.post('https://api.mercadopago.com/preapproval_plan', planRequest, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + config.mpAccessToken
+            }
+        }).then((response) => {
+            resolve(response.data.id);
+        }).catch((error) => {
+            reject(error.data);
+        })
+    })
+}
+
 app.post('/', (req, res) => {
     const body = req.body;
 
-    User.findById(body.user._id, (findErr, userDB) => {
+    User.findById(body.user._id, async (findErr, userDB) => {
         if(findErr) {
             return res.status(500).json({
                 ok: false,
@@ -95,111 +127,96 @@ app.post('/', (req, res) => {
         }
 
         if(userDB.subscriptions && userDB.subscriptions.indexOf(body.girl._id) < 0){
-            userDB.subscriptions.push(body.girl._id);
+            try {
+                const planId = await createPlan();
 
-            const planRequest = {
-                'amount': body.amount,
-                'status_after_retry': 'cancelled',
-                'retry_times': 2,
-                'name': `Subscripción Ocultuz - ${body.girl.nickname} - ${body.user.name}`,
-                'repeat_unit': 'month',
-                'trial_days': '0',
-                'repeat_every': '1'
-            };
-                
-            openpay.plans.create(planRequest, (error, plan) =>{
-                if(error) {
-                    return res.status(500).json({
-                        ok: false,
-                        error
-                    })
-                }
-        
-                const cardSelected = body.user.cards.find(card => card.default == true);
-        
                 const subscriptionRequest = {
-                    'plan_id': plan.id,
-                    'source_id' : cardSelected.id
+                    "preapproval_plan_id":planId,
+                    "card_token_id":body.cardToken,
+                    "payer_email":"test_user_16499481@testuser.com"
                 };
-        
-                openpay.customers.subscriptions.create(
-                    body.user.customerId, 
-                    subscriptionRequest, 
-                (errSub, subscription) => {
-                    if(errSub) {
-                        return res.status(500).json({
-                            ok: false,
-                            error: errSub
-                        })
+            
+                axios.post('https://api.mercadopago.com/preapproval', subscriptionRequest, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + config.mpAccessToken
                     }
-
-                    const daysBeforeCancell = config.daysBeforeCancell;
-                    const endDateSplitted = subscription.period_end_date.split('-');
-
-                    let nextPaymentDueDate = new Date();
-                    nextPaymentDueDate.setFullYear(endDateSplitted[0]);
-                    nextPaymentDueDate.setMonth(parseInt(endDateSplitted[1]) - 1);
-                    nextPaymentDueDate.setDate(parseInt(endDateSplitted[2]) + daysBeforeCancell);
-                   
-                    const subscriptionData = {
-                        userId: body.user._id,
-                        girlId: body.girl._id,
-                        type: 'subscription',
-                        subscribedSince: new Date(),
-                        nextPaymentDueDate,
-                        paymentId: subscription.id,
-                        paymentData: subscription
-                    }
-                
-                    const newSubscription = new Subscription(subscriptionData);
-                
-                    newSubscription.save((err, subscriptionSaved) => {
-                        if(err) {
-                            return res.status(500).json({
-                                ok: false,
-                                error: err
-                            })
-                        }
-        
-                        // Creating purchase
-        
-                        const purchase = new Purchase(subscriptionData);
-                        
-                        purchase.save((purchaseErr, purchaseSaved) => {
-                            if(purchaseErr) {
-                                return res.status(500).json({
-                                    ok: false,
-                                    error: purchaseErr
-                                })
-                            }
-        
-                            userDB.update(userDB, (updateErr, userUpdated) => {
-                                if(updateErr) {
-                                    return res.status(500).json({
-                                        ok: false,
-                                        error: updateErr
-                                    })
-                                }
-                    
-                                return res.status(201).json({
-                                    ok: true,
-                                    user: userDB,
-                                    message: 'Te has subscrito correctamente!'
-                                })
-                            })
-                        })
+                }).then((response) => {
+                    console.log(response);
+                }).catch((error) => {
+                    console.log(error);
+                    // console.log(error.request);
+                    return res.status(200).json({
+                        ok: false,
+                        error: error
                     })
+                })
         
-                });
-            });
+                // const daysBeforeCancell = config.daysBeforeCancell;
+                // const startDate = subscription.auto_recurring.start_date;
+
+                // let nextPaymentDueDate = new Date(startDate);
+                // nextPaymentDueDate.setMonth(nextPaymentDueDate.getMonth() + 1);
+                // nextPaymentDueDate.setDate(nextPaymentDueDate.getDate() + daysBeforeCancell);
+            
+                // const subscriptionData = {
+                //     userId: body.user._id,
+                //     girlId: body.girl._id,
+                //     type: 'subscription',
+                //     subscribedSince: new Date(),
+                //     nextPaymentDueDate,
+                //     paymentId: subscription.id,
+                //     paymentData: subscription,
+                //     status: 'pending'
+                // }
+            
+                // const newSubscription = new Subscription(subscriptionData);
+            
+                // newSubscription.save((err, subscriptionSaved) => {
+                //     if(err) {
+                //         return res.status(500).json({
+                //             ok: false,
+                //             error: err
+                //         })
+                //     }
+    
+                //     // Creating purchase
+    
+                //     const purchase = new Purchase(subscriptionData);
+                    
+                //     purchase.save((purchaseErr, purchaseSaved) => {
+                //         if(purchaseErr) {
+                //             return res.status(500).json({
+                //                 ok: false,
+                //                 error: purchaseErr
+                //             })
+                //         }
+    
+                //         return res.status(201).json({
+                //             ok: true,
+                //             user: userDB,
+                //             link: subscription.init_point,
+                //             message: 'Proceso realizado correctamente, si haz realizado el pago correctamente debería acreditarse a la brevedad'
+                //         })
+                //     })
+                // })
+        
+            } catch (error) {
+                console.log(error);
+                return res.status(500).json({
+                    ok: false,
+                    message: 'Ha ocurrido un error al procesar el pago12'
+                })
+            }
         } else {
             return res.status(400).json({
                 ok: false,
                 message: 'Ya te has subscrito a esta creadora'
             })
         }
-       
+    
     })
+    
 })
 
 app.post('/unsubscribe/:userId', [mdAuth, mdSameUser], (req, res) => {

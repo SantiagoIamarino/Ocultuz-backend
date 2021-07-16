@@ -52,6 +52,7 @@ app.post('/add-card/:userId', mdAuth, (req, res) => {
 
             const cardData = {
                 ...card.body,
+                token: req.body.mercadopago.token,
                 default: (userDB.cards.length > 0) ? false : true
             }
 
