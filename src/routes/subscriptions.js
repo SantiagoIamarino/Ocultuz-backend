@@ -135,6 +135,8 @@ app.post('/', (req, res) => {
                     "card_token_id":body.cardToken,
                     "payer_email":"test_user_16499481@testuser.com"
                 };
+
+                console.log(subscriptionRequest, config.mpAccessToken)
             
                 axios.post('https://api.mercadopago.com/preapproval', subscriptionRequest, {
                     headers: {
