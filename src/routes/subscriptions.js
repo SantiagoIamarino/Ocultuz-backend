@@ -77,16 +77,16 @@ app.post('/girl-subscriptions/:userId', [mdAuth, mdSameUser], (req, res) => {
 
 })
 
-function createPlan() {
+function createPlan(amount) {
     return new Promise((resolve, reject) => {
         const planRequest = {
             "back_url":"https://www.mercadopago.com.ar",
-            "reason":"Plan Pase Mensual Gold",
+            "reason":"Ocultuz subscripción mensual",
             "auto_recurring":{
                 "frequency":"1",
                 "frequency_type":"months",
-                "transaction_amount":1100,
-                "currency_id":"ARS",
+                "transaction_amount": amount,
+                "currency_id":"MXN",
                 "repetitions":12,
                 "free_trial":{
                     "frequency_type":"months",
@@ -104,6 +104,26 @@ function createPlan() {
             resolve(response.data.id);
         }).catch((error) => {
             reject(error.data);
+        })
+    })
+}
+
+function updateUserSubs(userToUpdate) {
+    return new Promise((resolve, reject) => {
+        User.findById(userToUpdate._id, (err, userDB) => {
+            if(err) {
+                reject(err)
+            }
+
+            userDB.subscriptions = userToUpdate.subscriptions;
+            userDB.update(userDB, (errUpdt, userUpdated) => {
+                if(errUpdt) {
+                    reject(errUpdt)
+                }
+
+                resolve(userDB);
+                
+            })
         })
     })
 }
@@ -128,15 +148,13 @@ app.post('/', (req, res) => {
 
         if(userDB.subscriptions && userDB.subscriptions.indexOf(body.girl._id) < 0){
             try {
-                const planId = await createPlan();
+                const planId = await createPlan(body.amount);
 
                 const subscriptionRequest = {
                     "preapproval_plan_id":planId,
                     "card_token_id":body.cardToken,
-                    "payer_email":"test_user_16499481@testuser.com"
+                    "payer_email": body.user.email
                 };
-
-                console.log(subscriptionRequest, config.mpAccessToken)
             
                 axios.post('https://api.mercadopago.com/preapproval', subscriptionRequest, {
                     headers: {
@@ -144,64 +162,65 @@ app.post('/', (req, res) => {
                         'Authorization': 'Bearer ' + config.mpAccessToken
                     }
                 }).then((response) => {
-                    console.log(response);
+                    const subscription = response.data;
+                    const daysBeforeCancell = config.daysBeforeCancell;
+                    const startDate = subscription.auto_recurring.start_date;
+        
+                    let nextPaymentDueDate = new Date(startDate);
+                    nextPaymentDueDate.setMonth(nextPaymentDueDate.getMonth() + 1);
+                    nextPaymentDueDate.setDate(nextPaymentDueDate.getDate() + daysBeforeCancell);
+                
+                    const subscriptionData = {
+                        userId: body.user._id,
+                        girlId: body.girl._id,
+                        type: 'subscription',
+                        subscribedSince: new Date(),
+                        nextPaymentDueDate,
+                        paymentId: subscription.id,
+                        paymentData: subscription,
+                        status: (subscription.status == 'authorized') ? 'completed' : 'pending'
+                    }
+                
+                    const newSubscription = new Subscription(subscriptionData);
+                
+                    newSubscription.save((err, subscriptionSaved) => {
+                        if(err) {
+                            return res.status(500).json({
+                                ok: false,
+                                error: err
+                            })
+                        }
+        
+                        // Creating purchase
+        
+                        const purchase = new Purchase(subscriptionData);
+                        
+                        purchase.save(async (purchaseErr, purchaseSaved) => {
+                            if(purchaseErr) {
+                                return res.status(500).json({
+                                    ok: false,
+                                    error: purchaseErr
+                                })
+                            }
+        
+                            userDB.subscriptions.push(body.girl._id);
+        
+                            await updateUserSubs(userDB);
+        
+                            return res.status(201).json({
+                                ok: true,
+                                user: userDB,
+                                message: 'Te has subscripto correctamente a esta creadora'
+                            })
+                        })
+                    })
                 }).catch((error) => {
                     console.log(error);
-                    // console.log(error.request);
                     return res.status(200).json({
                         ok: false,
                         error: error
                     })
                 })
-        
-                // const daysBeforeCancell = config.daysBeforeCancell;
-                // const startDate = subscription.auto_recurring.start_date;
-
-                // let nextPaymentDueDate = new Date(startDate);
-                // nextPaymentDueDate.setMonth(nextPaymentDueDate.getMonth() + 1);
-                // nextPaymentDueDate.setDate(nextPaymentDueDate.getDate() + daysBeforeCancell);
-            
-                // const subscriptionData = {
-                //     userId: body.user._id,
-                //     girlId: body.girl._id,
-                //     type: 'subscription',
-                //     subscribedSince: new Date(),
-                //     nextPaymentDueDate,
-                //     paymentId: subscription.id,
-                //     paymentData: subscription,
-                //     status: 'pending'
-                // }
-            
-                // const newSubscription = new Subscription(subscriptionData);
-            
-                // newSubscription.save((err, subscriptionSaved) => {
-                //     if(err) {
-                //         return res.status(500).json({
-                //             ok: false,
-                //             error: err
-                //         })
-                //     }
-    
-                //     // Creating purchase
-    
-                //     const purchase = new Purchase(subscriptionData);
-                    
-                //     purchase.save((purchaseErr, purchaseSaved) => {
-                //         if(purchaseErr) {
-                //             return res.status(500).json({
-                //                 ok: false,
-                //                 error: purchaseErr
-                //             })
-                //         }
-    
-                //         return res.status(201).json({
-                //             ok: true,
-                //             user: userDB,
-                //             link: subscription.init_point,
-                //             message: 'Proceso realizado correctamente, si haz realizado el pago correctamente debería acreditarse a la brevedad'
-                //         })
-                //     })
-                // })
         
             } catch (error) {
                 console.log(error);
@@ -254,36 +273,44 @@ app.post('/unsubscribe/:userId', [mdAuth, mdSameUser], (req, res) => {
                 })
             }
 
-            openpay.customers.subscriptions.delete(
-                userDB.customerId,
-                subscriptionDB.paymentData.id,
-                (errSubCancel, subscriptionCancelled) => {
-                    if(errSubCancel) {
-                        return res.status(500).json({
-                            ok: false,
-                            error: errSubCancel
-                        })
-                    }
+            const planId = subscriptionDB.paymentData.id;
+            const data = {
+              status: 'cancelled'
+            }
 
-                    subscriptionDB.active = false;
+            axios.put(`https://api.mercadopago.com/preapproval/${planId}`, data, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + config.mpAccessToken
+                }
+            }).then((response) => {
+              subscriptionDB.active = false;
+              subscriptionDB.update(subscriptionDB, async (errSubUpdt, subscriptionUpdt) => {
+                  if(errSubUpdt) {
+                      return res.status(500).json({
+                          ok: false,
+                          error: errSubUpdt
+                      })
+                  }
 
-                    subscriptionDB.update(subscriptionDB, (errSubUpdt, subscriptionUpdt) => {
-                        if(errSubUpdt) {
-                            return res.status(500).json({
-                                ok: false,
-                                error: errSubUpdt
-                            })
-                        }
+                  const girlIndex = userDB.subscriptions.indexOf(body.girlId);
+                  userDB.subscriptions.splice(girlIndex, 1);
+                  await updateUserSubs(userDB);
 
-                        delete userDB.password;
+                  delete userDB.password;
 
-                        return res.status(200).json({
-                            ok: true,
-                            message: 'Has cancelado tu subscripción correctamente',
-                            user: userDB
-                        })
-                    })
+                  return res.status(200).json({
+                      ok: true,
+                      message: 'Has cancelado tu subscripción correctamente',
+                      user: userDB
+                  })
+              })
+            }).catch((error) => {
+                return res.status(500).json({
+                  ok: false,
+                  error: error.data
                 })
+            })
         })
     })
 })

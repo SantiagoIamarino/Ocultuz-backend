@@ -37,7 +37,7 @@ app.post('/create-user', mdAuth, (req, res) => {
 
 app.post('/add-card/:userId', mdAuth, (req, res) => {
     const cardRequest = {
-        token : req.body.mercadopago.token,
+        token: req.body.mercadopago.token,
         customer_id: req.body.mercadopago.customerId
     }
       
@@ -138,6 +138,11 @@ function createStoreCharge(customerId, storeChargeRequest) {
 
 app.post('/store', mdAuth, (req, res) => {
     const body = req.body;
+    console.log(body);
+
+    return res.status(200).json({
+        ok: true
+    })
 
     let storeChargeRequest;
 
