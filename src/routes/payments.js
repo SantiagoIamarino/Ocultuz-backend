@@ -207,7 +207,6 @@ app.post('/store', mdAuth, (req, res) => {
                 }
             
                 transport.sendMail(message, function(err, info) {
-                    console.log(err);
                     if (err) {
                         return res.status(500).json({
                             ok: false,

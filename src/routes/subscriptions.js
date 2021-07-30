@@ -86,7 +86,7 @@ function createPlan(amount) {
                 "frequency":"1",
                 "frequency_type":"months",
                 "transaction_amount": amount,
-                "currency_id":"MXN",
+                "currency_id":"ARS",
                 "repetitions":12,
                 "free_trial":{
                     "frequency_type":"months",
@@ -226,7 +226,7 @@ app.post('/', (req, res) => {
                 console.log(error);
                 return res.status(500).json({
                     ok: false,
-                    message: 'Ha ocurrido un error al procesar el pago12'
+                    message: 'Ha ocurrido un error al procesar el pago'
                 })
             }
         } else {
