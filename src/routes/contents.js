@@ -11,8 +11,12 @@ const mdSameUser = require('../middlewares/same-user').verifySameUserOrAdmin;
 const config = require('../config/vars');
 
 const Openpay = require('openpay');
-const purchase = require('../models/purchase');
 const openpay = new Openpay(config.openpayId, config.openpayPrivateKey, false);
+
+const mercadopago = require('mercadopago');
+mercadopago.configure({
+    access_token: config.mpAccessToken
+});
 
 const app = express();
 
@@ -373,64 +377,55 @@ app.post('/buy/:girlId', mdAuth, (req, res) => {
         })
     }
 
-    Subscription.findOne({
-      girlId: girlDB._id,
-      userId: userId
-    })
-    .exec((subsErr, subscriptionDB) => {
-        if(subsErr) {
-            return res.status(500).json({
-                ok: false,
-                error: subsErr
-            })
-        }
+      Subscription.findOne({
+        girlId: girlDB._id,
+        userId: userId
+      })
+      .exec((subsErr, subscriptionDB) => {
+          if(subsErr) {
+              return res.status(500).json({
+                  ok: false,
+                  error: subsErr
+              })
+          }
 
-        if(!subscriptionDB) {
+          if(!subscriptionDB) {
+              return res.status(400).json({
+                  ok: false,
+                  message: 'Debes estar subscripto para realizar esta compra'
+              })
+          }
+
+          const isContentAllowed = validateContent(girlDB, content.type);
+
+          if(!isContentAllowed) {
             return res.status(400).json({
-                ok: false,
-                message: 'Debes estar subscripto para realizar esta compra'
+              ok: false,
+              message: 'Esa creadora no acepta este tipo de contenido'
             })
-        }
+          }
 
-        const isContentAllowed = validateContent(girlDB, content.type);
-
-        if(!isContentAllowed) {
-          return res.status(400).json({
-            ok: false,
-            message: 'Esa creadora no acepta este tipo de contenido'
-          })
-        }
-        
-        const cardSelected = req.user.cards.find(card => card.default == true);
-
-        const chargeRequest = {
-            'source_id' : cardSelected.id,
-            'method' : 'card',
-            'currency': 'USD',
-            'amount' : content.amount,
-            'description' : content.description,
-            'device_session_id': req.body.deviceSessionId
-        }
-
-        openpay.customers.charges.create(
-            req.user.customerId,
-            chargeRequest, 
-        (error, charge) => {
-
-            if(error) {
-                return res.status(500).json({
-                    ok: false,
-                    error
-                })
+          req.body.paymentData.transaction_amount = 2000;
+          req.body.paymentData.payer =  {
+            email: 'testing@gmail.com',
+            identification: {
+              number: "43806240"
             }
+          };
 
-            const newPurchase = new Purchase({
-                girlId,
-                userId,
-                contentType: content.type,
-                type: 'product',
-                amount: content.amount,
-                date: new Date()
+          console.log(req.body.paymentData);
+
+          mercadopago.payment.save(req.body.paymentData)
+            .then((response) => {
+              const newPurchase = new Purchase({
+                  girlId,
+                  userId,
+                  contentType: content.type,
+                  type: 'product',
+                  amount: content.amount,
+                  date: new Date(),
+                  pending: (response.status == 'approved') ? false : true,
+                  paymentId: response.id
               })
 
               newPurchase.save((errPurchase, purchaseSaved) => {
@@ -446,8 +441,14 @@ app.post('/buy/:girlId', mdAuth, (req, res) => {
                   message: 'Adquiriste el contenido correctamente'
                 })
               })
-        });
-    })
+            })
+            .catch((error) => {
+              return res.status(500).json({
+                  ok: false,
+                  error
+              })
+            });
+      })
     })
 })
 
