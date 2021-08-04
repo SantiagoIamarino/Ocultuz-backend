@@ -27,7 +27,6 @@ app.post('/', (req, res) => {
             }
         }).then((response) => {
             const paymentData = response.data;
-            console.log(paymentData);
 
             if(paymentData.status == 'pending') {
                 return res.status(200).json({
