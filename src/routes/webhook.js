@@ -20,7 +20,7 @@ app.post('/', (req, res) => {
         const paymentId = body.data.id;
         const url = `https://api.mercadopago.com/v1/payments/${paymentId}`;
 
-        axios.get(url, planRequest, {
+        axios.get(url, {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + config.mpAccessToken
