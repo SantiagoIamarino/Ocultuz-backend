@@ -7,118 +7,12 @@ const Purchase = require('../models/purchase');
 
 const config = require('../config/vars');
 
-const Openpay = require('openpay');
-const openpay = new Openpay(config.openpayId, config.openpayPrivateKey, false);
-
 const mercadopago = require('mercadopago');
 mercadopago.configure({
     access_token: config.mpAccessToken
 });
 
 const mdAuth = require('../middlewares/auth').verifyToken;
-
-app.post('/create-user', mdAuth, (req, res) => {
-    const customerRequest = {
-        email: req.body.email
-    }
-
-    mercadopago.customers.create(customerRequest).then((customer) => {
-        return res.status(200).json({
-            ok: true,
-            customer
-        })
-    }).catch(err => {
-        return res.status(500).json({
-            ok: false,
-            error: err
-        })
-    })
-})
-
-app.post('/add-card/:userId', mdAuth, (req, res) => {
-    const cardRequest = {
-        token: req.body.mercadopago.token,
-        customer_id: req.body.mercadopago.customerId
-    }
-      
-    mercadopago.card.create(cardRequest).then((card) =>  {
-        User.findById(req.user._id, (err, userDB) => {
-            if(err) {
-                return res.status(500).json({
-                    ok: false,
-                    error: err
-                })
-            }
-
-            const cardData = {
-                ...card.body,
-                token: req.body.mercadopago.token,
-                default: (userDB.cards.length > 0) ? false : true
-            }
-
-            userDB.cards.push(cardData);
-
-            userDB.update(userDB, (errUpdt, userUpdated) => {
-                if(errUpdt) {
-                    return res.status(500).json({
-                        ok: false,
-                        error: errUpdt
-                    })
-                }
-
-                return res.status(200).json({
-                    ok: true,
-                    message: 'Tarjeta añadida correctamente'
-                })
-            })
-        })
-    }).catch((err) => {
-        console.log(err);
-        return res.status(500).json({
-            ok: false,
-            err
-        })
-    });
-})
-
-app.post('/remove-card', mdAuth, (req, res) => {
-    const body = req.body;
-
-    mercadopago.customers.cards.delete(body.customerId, body.cardId, (err, cardDeleted) => {
-        if(err) {
-            return res.status(500).json({
-                ok: false,
-                error: err
-            })
-        }
-
-        User.findById(req.user._id, (errUsr, userDB) => {
-            if(errUsr) {
-                return res.status(500).json({
-                    ok: false,
-                    error: errUsr
-                })
-            }
-
-            const cardIndex = userDB.cards.findIndex((card => card.id == body.cardId));
-            userDB.cards.splice(cardIndex, 1);
-
-            userDB.update(userDB, (errUpdt, userUpdated) => {
-                if(errUpdt) {
-                    return res.status(500).json({
-                        ok: false,
-                        error: errUpdt
-                    })
-                }
-
-                return res.status(200).json({
-                    ok: true,
-                    message: 'Tarjeta removida correctamente'
-                })
-            })
-        })
-    })
-})
 
 app.get('/get-store-options', mdAuth, (req, res) => {
     mercadopago.get("/v1/payment_methods").then((response) => {

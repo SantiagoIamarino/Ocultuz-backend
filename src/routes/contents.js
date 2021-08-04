@@ -10,9 +10,6 @@ const mdSameUser = require('../middlewares/same-user').verifySameUserOrAdmin;
 
 const config = require('../config/vars');
 
-const Openpay = require('openpay');
-const openpay = new Openpay(config.openpayId, config.openpayPrivateKey, false);
-
 const mercadopago = require('mercadopago');
 mercadopago.configure({
     access_token: config.mpAccessToken
@@ -358,6 +355,7 @@ function validateContent(girlDB, contentType) {
 }
 
 app.post('/buy/:girlId', mdAuth, (req, res) => {
+  const paymentData = req.body.paymentData;
   const girlId = req.params.girlId;
   const userId = req.user._id;
   const content = req.body;
@@ -405,29 +403,36 @@ app.post('/buy/:girlId', mdAuth, (req, res) => {
             })
           }
 
-          req.body.paymentData.transaction_amount = 2000;
-          req.body.paymentData.payer =  {
-            email: 'testing@gmail.com',
-            identification: {
-              number: "43806240"
+          var payment_data = {
+            transaction_amount: Number(paymentData.transactionAmount),
+            token: paymentData.token,
+            description: paymentData.description,
+            installments: Number(paymentData.installments),
+            payment_method_id: paymentData.paymentMethodId,
+            issuer_id: paymentData.issuerId,
+            payer: {
+              email: paymentData.payer.email,
+              identification: {
+                type: paymentData.payer.identification.type,
+                number: paymentData.payer.identification.number
+              }
             }
           };
-
-          console.log(req.body.paymentData);
-
-          mercadopago.payment.save(req.body.paymentData)
-            .then((response) => {
+          
+          mercadopago.payment.save(payment_data)
+            .then(function(response) {
+        
               const newPurchase = new Purchase({
-                  girlId,
-                  userId,
-                  contentType: content.type,
-                  type: 'product',
-                  amount: content.amount,
-                  date: new Date(),
-                  pending: (response.status == 'approved') ? false : true,
-                  paymentId: response.id
+                girlId,
+                userId,
+                contentType: content.type,
+                type: 'product',
+                amount: paymentData.transactionAmount,
+                date: new Date(),
+                pending: (response.body.status == 'approved') ? false : true,
+                paymentId: response.body.id
               })
-
+        
               newPurchase.save((errPurchase, purchaseSaved) => {
                 if(errPurchase ){
                   return res.status(500).json({
@@ -435,19 +440,19 @@ app.post('/buy/:girlId', mdAuth, (req, res) => {
                     error: errPurchase
                   })
                 }
-
-                return res.status(200).json({
-                  ok: true,
-                  message: 'Adquiriste el contenido correctamente'
-                })
+        
+                res.status(response.status).json({
+                  status: response.body.status,
+                  status_detail: response.body.status_detail,
+                  id: response.body.id
+                });
               })
             })
-            .catch((error) => {
-              return res.status(500).json({
-                  ok: false,
-                  error
-              })
+            .catch(function(error) {
+              console.log(error);
+              // res.status(error.status).send(error);
             });
+          
       })
     })
 })

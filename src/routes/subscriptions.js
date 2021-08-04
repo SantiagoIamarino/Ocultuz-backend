@@ -10,9 +10,6 @@ const User = require('../models/user');
 
 const config = require('../config/vars');
 
-const Openpay = require('openpay');
-const openpay = new Openpay(config.openpayId, config.openpayPrivateKey, false);
-
 const app = express();
 
 app.get('/user-subscriptions/:userId', [mdAuth, mdSameUser], (req, res) => {
