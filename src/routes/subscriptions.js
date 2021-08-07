@@ -290,16 +290,9 @@ app.post('/unsubscribe/:userId', [mdAuth, mdSameUser], (req, res) => {
                       })
                   }
 
-                  const girlIndex = userDB.subscriptions.indexOf(body.girlId);
-                  userDB.subscriptions.splice(girlIndex, 1);
-                  await updateUserSubs(userDB);
-
-                  delete userDB.password;
-
                   return res.status(200).json({
                       ok: true,
-                      message: 'Has cancelado tu subscripción correctamente',
-                      user: userDB
+                      message: 'Has cancelado tu subscripción correctamente'
                   })
               })
             }).catch((error) => {
