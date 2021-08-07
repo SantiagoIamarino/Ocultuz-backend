@@ -83,7 +83,7 @@ function createPlan(amount) {
                 "frequency":"1",
                 "frequency_type":"months",
                 "transaction_amount": amount,
-                "currency_id":"ARS",
+                "currency_id":"MXN",
                 "repetitions":12,
                 "free_trial":{
                     "frequency_type":"months",
