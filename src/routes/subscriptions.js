@@ -98,7 +98,6 @@ function createPlan(amount) {
                 'Authorization': 'Bearer ' + config.mpAccessToken
             }
         }).then((response) => {
-            console.log(response.data);
             resolve(response.data.id);
         }).catch((error) => {
             reject(error.data);
