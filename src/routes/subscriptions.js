@@ -150,7 +150,7 @@ app.post('/', (req, res) => {
                 const subscriptionRequest = {
                     "preapproval_plan_id":planId,
                     "card_token_id":body.cardToken,
-                    "payer_email": "test_user_87758689@testuser.com"
+                    "payer_email": "test_user_9965551@testuser.com"
                 };
             
                 axios.post('https://api.mercadopago.com/preapproval', subscriptionRequest, {
@@ -160,12 +160,10 @@ app.post('/', (req, res) => {
                     }
                 }).then((response) => {
                     const subscription = response.data;
-                    const daysBeforeCancell = config.daysBeforeCancell;
+                    // const daysBeforeCancell = config.daysBeforeCancell;
                     const startDate = subscription.auto_recurring.start_date;
         
                     let nextPaymentDueDate = new Date(startDate);
-                    nextPaymentDueDate.setMonth(nextPaymentDueDate.getMonth() + 1);
-                    nextPaymentDueDate.setDate(nextPaymentDueDate.getDate() + daysBeforeCancell);
                 
                     const subscriptionData = {
                         userId: body.user._id,
