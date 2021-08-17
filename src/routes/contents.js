@@ -10,9 +10,10 @@ const mdSameUser = require('../middlewares/same-user').verifySameUserOrAdmin;
 
 const config = require('../config/vars');
 
-const Openpay = require('openpay');
-const purchase = require('../models/purchase');
-const openpay = new Openpay(config.openpayId, config.openpayPrivateKey, false);
+const mercadopago = require('mercadopago');
+mercadopago.configure({
+    access_token: config.mpAccessToken
+});
 
 const app = express();
 
@@ -354,6 +355,7 @@ function validateContent(girlDB, contentType) {
 }
 
 app.post('/buy/:girlId', mdAuth, (req, res) => {
+  const paymentData = req.body.paymentData;
   const girlId = req.params.girlId;
   const userId = req.user._id;
   const content = req.body;
@@ -373,66 +375,60 @@ app.post('/buy/:girlId', mdAuth, (req, res) => {
         })
     }
 
-    Subscription.findOne({
-      girlId: girlDB._id,
-      userId: userId
-    })
-    .exec((subsErr, subscriptionDB) => {
-        if(subsErr) {
-            return res.status(500).json({
-                ok: false,
-                error: subsErr
-            })
-        }
+      Subscription.findOne({
+        girlId: girlDB._id,
+        userId: userId
+      })
+      .exec((subsErr, subscriptionDB) => {
+          if(subsErr) {
+              return res.status(500).json({
+                  ok: false,
+                  error: subsErr
+              })
+          }
 
-        if(!subscriptionDB) {
+          // if(!subscriptionDB) {
+          //     return res.status(400).json({
+          //         ok: false,
+          //         message: 'Debes estar subscripto para realizar esta compra'
+          //     })
+          // }
+
+          const isContentAllowed = validateContent(girlDB, content.type);
+
+          if(!isContentAllowed) {
             return res.status(400).json({
-                ok: false,
-                message: 'Debes estar subscripto para realizar esta compra'
+              ok: false,
+              message: 'Esa creadora no acepta este tipo de contenido'
             })
-        }
+          }
 
-        const isContentAllowed = validateContent(girlDB, content.type);
-
-        if(!isContentAllowed) {
-          return res.status(400).json({
-            ok: false,
-            message: 'Esa creadora no acepta este tipo de contenido'
-          })
-        }
-        
-        const cardSelected = req.user.cards.find(card => card.default == true);
-
-        const chargeRequest = {
-            'source_id' : cardSelected.id,
-            'method' : 'card',
-            'currency': 'USD',
-            'amount' : content.amount,
-            'description' : content.description,
-            'device_session_id': req.body.deviceSessionId
-        }
-
-        openpay.customers.charges.create(
-            req.user.customerId,
-            chargeRequest, 
-        (error, charge) => {
-
-            if(error) {
-                return res.status(500).json({
-                    ok: false,
-                    error
-                })
+          var payment_data = {
+            transaction_amount: Number(paymentData.transactionAmount),
+            token: paymentData.token,
+            description: paymentData.description,
+            installments: Number(paymentData.installments),
+            payment_method_id: paymentData.paymentMethodId,
+            issuer_id: paymentData.issuerId,
+            payer: {
+              email: paymentData.payer.email
             }
-
-            const newPurchase = new Purchase({
+          };
+          
+          mercadopago.payment.save(payment_data)
+            .then(function(response) {
+        
+              const newPurchase = new Purchase({
                 girlId,
                 userId,
                 contentType: content.type,
                 type: 'product',
-                amount: content.amount,
-                date: new Date()
+                amount: paymentData.transactionAmount,
+                date: new Date(),
+                pending: (response.body.status == 'approved') ? false : true,
+                paymentId: response.body.id
               })
-
+        
               newPurchase.save((errPurchase, purchaseSaved) => {
                 if(errPurchase ){
                   return res.status(500).json({
@@ -440,14 +436,20 @@ app.post('/buy/:girlId', mdAuth, (req, res) => {
                     error: errPurchase
                   })
                 }
-
-                return res.status(200).json({
-                  ok: true,
-                  message: 'Adquiriste el contenido correctamente'
-                })
+        
+                res.status(response.status).json({
+                  status: response.body.status,
+                  status_detail: response.body.status_detail,
+                  id: response.body.id
+                });
               })
-        });
-    })
+            })
+            .catch(function(error) {
+              console.log(error);
+              // res.status(error.status).send(error);
+            });
+          
+      })
     })
 })
 
