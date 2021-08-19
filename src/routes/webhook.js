@@ -8,12 +8,10 @@ const User = require('../models/user');
 const axios = require('axios');
 const config = require('../config/vars');
 
-const Openpay = require('openpay');
-const openpay = new Openpay(config.openpayId, config.openpayPrivateKey, false);
-
 
 app.post('/', (req, res) => {
     const body = req.body;
+    console.log(req.body);
 
     if(body.type == 'payment') {
         const paymentId = body.data.id;
