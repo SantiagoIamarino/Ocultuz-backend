@@ -23,6 +23,7 @@ app.post('/', (req, res) => {
                 'Authorization': 'Bearer ' + config.mpAccessToken
             }
         }).then((response) => {
+            console.log('PaymentData', response.data);
             const paymentData = response.data;
 
             if(paymentData.status == 'pending') {
