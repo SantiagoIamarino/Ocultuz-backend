@@ -84,11 +84,7 @@ function createPlan(amount) {
                 "frequency_type":"days",
                 "transaction_amount": amount,
                 "currency_id":"MXN",
-                "repetitions":12,
-                "free_trial":{
-                    "frequency_type":"months",
-                    "frequency":"1"
-                }
+                "repetitions":12
             }
         };
     
