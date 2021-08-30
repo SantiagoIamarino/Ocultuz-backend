@@ -45,7 +45,8 @@ app.post('/store', mdAuth, (req, res) => {
                 contentType: body.type,
                 type: 'product',
                 pending: true,
-                paymentId: charge.body.id
+                paymentId: charge.body.id,
+                amount: body.paymentData.transaction_amount
             })
 
             if(body._id) {

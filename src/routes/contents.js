@@ -91,7 +91,8 @@ app.get('/pending/notification/:girlId', [mdAuth, mdSameUser], (req, res) => {
     type: 'product',
     contentType: { $ne: 'subscription' },
     hasBeenSent: false,
-    girlId
+    girlId,
+    pending: false
   }, (err, notificationTotals) => {
     if(err) {
       return res.status(500).json({
@@ -116,7 +117,8 @@ app.post('/pending/:girlId', [mdAuth, mdSameUser], (req, res) => {
     type: 'product',
     contentType: { $ne: 'subscription' },
     hasBeenSent: false,
-    girlId
+    girlId,
+    pending: false
   };
 
   Purchase.find(mongooseFilters)

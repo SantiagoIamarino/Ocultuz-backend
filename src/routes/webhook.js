@@ -45,14 +45,11 @@ app.post('/', (req, res) => {
                             ok: true
                         })
                     }
-    
-                    if(!purchaseDB) {
-                        return res.status(200).json({
-                            ok: true
-                        })
+
+                    if(paymentData.status == 'approved') {
+                        purchaseDB.pending = false;
                     }
     
-                    purchaseDB.pending = false;
                     purchaseDB.update(purchaseDB, (errUpdt, purchaseUpdated) => {
                         if(errUpdt) {
                             return res.status(200).json({
