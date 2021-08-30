@@ -81,7 +81,7 @@ function createPlan(amount) {
             "reason":"Ocultuz subscripción mensual",
             "auto_recurring":{
                 "frequency":"1",
-                "frequency_type":"months",
+                "frequency_type":"days",
                 "transaction_amount": amount,
                 "currency_id":"MXN",
                 "repetitions":12,
@@ -100,6 +100,7 @@ function createPlan(amount) {
         }).then((response) => {
             resolve(response.data.id);
         }).catch((error) => {
+            console.log(error)
             reject(error.data);
         })
     })

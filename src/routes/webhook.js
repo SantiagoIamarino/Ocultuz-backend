@@ -8,6 +8,24 @@ const User = require('../models/user');
 const axios = require('axios');
 const config = require('../config/vars');
 
+function getSubscriptionInfo(paymentId) {
+    return new Promise((resolve, reject) => {
+        let url = "https://api.mercadopago.com/preapproval/search"
+        url += `?access_token=${config.mpAccessToken}`;
+        url += `&preapproval_plan_id=${paymentId}`;
+
+        axios.get(url, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + config.mpAccessToken
+            }
+        }).then((response) => {
+            resolve(response.data.results[0]);
+        })
+        .catch(error => console.log('getSubscriptionInfo ', error));
+    })
+}
+
 
 app.post('/', (req, res) => {
     const body = req.body;
@@ -62,7 +80,7 @@ app.post('/', (req, res) => {
                     // --header 'Authorization: Bearer ENV_ACCESS_TOKEN' \
 
                     Subscription.findOne({paymentId: paymentId}, 
-                        (err, subscriptionDB) => {
+                        async (err, subscriptionDB) => {
                             if(err) {
                                 return res.status(200).json({
                                     ok: true
@@ -75,14 +93,12 @@ app.post('/', (req, res) => {
                                 })
                             }
 
+                            const subscription = await getSubscriptionInfo();
+
                             subscriptionDB.active = true;
+                            const startDate = subscription.auto_recurring.start_date;
+                            subscriptionDB.nextPaymentDueDate = new Date(startDate);
     
-                            const daysBeforeCancell = config.daysBeforeCancell;
-    
-                            let nextPaymentDueDate = new Date(subscription.period_end_date);
-                            nextPaymentDueDate.setDate(nextPaymentDueDate.getDate() + daysBeforeCancell);
-    
-                            subscriptionDB.nextPaymentDue = nextPaymentDueDate;
     
                             subscriptionDB.update(subscriptionDB, (errUpt, subUpdated) => {
                                 return res.status(200).json({
