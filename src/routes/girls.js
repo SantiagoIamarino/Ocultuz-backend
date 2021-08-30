@@ -181,8 +181,9 @@ app.post('/get-basic-content/:girlId', mdAuth, (req, res) => {
             if(subscriptionDB) {
                 const now = new Date();
                 const subscriptionEnding = new Date(subscriptionDB.nextPaymentDueDate);
+                console.log(now, subscriptionEnding);
 
-                if(now >= subscriptionEnding) {
+                if(now >= subscriptionEnding && false) {
 
                     subscriptionDB.delete((errDlt, subscriptionDeleted) => {
                         if(errDlt) {
