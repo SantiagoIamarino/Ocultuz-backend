@@ -76,8 +76,7 @@ app.post('/', (req, res) => {
                         }
                     });
                 } else {
-                    // curl --location --request GET 'https://api.mercadopago.com/preapproval/search?status=paused&payer_email=john@yourdomain.com' \
-                    // --header 'Authorization: Bearer ENV_ACCESS_TOKEN' \
+                    //https://api.mercadopago.com/preapproval/search?access_token=APP_USR-5994785052999824-080720-b06d309f87d8a213c21a8b6676c1543d-803836590&preapproval_plan_id=2c9380847b62931d017b9973f148280d
 
                     Subscription.findOne({paymentId: paymentId}, 
                         async (err, subscriptionDB) => {
