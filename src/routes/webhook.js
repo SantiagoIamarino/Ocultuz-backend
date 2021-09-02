@@ -93,6 +93,7 @@ app.post('/', (req, res) => {
                             }
 
                             const subscription = await getSubscriptionInfo();
+                            console.log('Sub', subscription);
 
                             subscriptionDB.active = true;
                             const startDate = subscription.auto_recurring.start_date;
