@@ -425,7 +425,7 @@ app.post('/buy/:girlId', mdAuth, (req, res) => {
                 userId,
                 contentType: content.type,
                 type: 'product',
-                amount: paymentData.transactionAmount,
+                amount: req.body.amount,
                 date: new Date(),
                 pending: (response.body.status == 'approved') ? false : true,
                 paymentId: response.body.id
