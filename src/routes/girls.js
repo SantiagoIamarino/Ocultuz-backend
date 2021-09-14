@@ -181,9 +181,8 @@ app.post('/get-basic-content/:girlId', mdAuth, (req, res) => {
             if(subscriptionDB) {
                 const now = new Date();
                 const subscriptionEnding = new Date(subscriptionDB.nextPaymentDueDate);
-                console.log(now, subscriptionEnding);
 
-                if(now >= subscriptionEnding && false) {
+                if(now >= subscriptionEnding) {
 
                     subscriptionDB.delete((errDlt, subscriptionDeleted) => {
                         if(errDlt) {
@@ -199,36 +198,35 @@ app.post('/get-basic-content/:girlId', mdAuth, (req, res) => {
                         })
                     })
                 }
-            }
 
-            
-            Content.find({
-                girlId: girlId,
-                type: 'general'
-            })
-            .skip((perPage * page) - perPage)
-            .limit(perPage * page)
-            .exec((errCont, contentsDB) => {
-                if(errCont) {
-                    return res.status(500).json({
-                        ok: false,
-                        error: errCont
-                    })
-                }
-
-                Content.count({
+                Content.find({
                     girlId: girlId,
                     type: 'general'
-                }, (errCount, basicTotal) => {
-        
-                    return res.status(200).json({
-                        ok: true,
-                        basicContent: contentsDB,
-                        basicTotal
-                    })
                 })
-                
-            })
+                .skip((perPage * page) - perPage)
+                .limit(perPage * page)
+                .exec((errCont, contentsDB) => {
+                    if(errCont) {
+                        return res.status(500).json({
+                            ok: false,
+                            error: errCont
+                        })
+                    }
+    
+                    Content.count({
+                        girlId: girlId,
+                        type: 'general'
+                    }, (errCount, basicTotal) => {
+            
+                        return res.status(200).json({
+                            ok: true,
+                            basicContent: contentsDB,
+                            basicTotal
+                        })
+                    })
+                    
+                })
+            }
 
         })
     } else { // Same user (owner of her content)

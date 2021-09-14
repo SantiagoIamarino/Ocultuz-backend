@@ -39,12 +39,15 @@ app.post('/store', mdAuth, (req, res) => {
 
     mercadopago.payment.create(body.paymentData)
         .then((charge) => {
+            const date_created = (charge?.response?.date_created) ? charge.response.date_created : new Date();
+
             const purchase = new Purchase({
                 userId: req.user._id,
                 girlId: body.girlId,
                 contentType: body.type,
                 type: 'product',
                 pending: true,
+                date: date_created,
                 paymentId: charge.body.id,
                 amount: body.amount
             })

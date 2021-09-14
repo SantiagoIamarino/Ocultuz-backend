@@ -377,82 +377,83 @@ app.post('/buy/:girlId', mdAuth, (req, res) => {
         })
     }
 
-      Subscription.findOne({
-        girlId: girlDB._id,
-        userId: userId
-      })
-      .exec((subsErr, subscriptionDB) => {
-          if(subsErr) {
-              return res.status(500).json({
-                  ok: false,
-                  error: subsErr
-              })
-          }
-
-          // if(!subscriptionDB) {
-          //     return res.status(400).json({
-          //         ok: false,
-          //         message: 'Debes estar subscripto para realizar esta compra'
-          //     })
-          // }
-
-          const isContentAllowed = validateContent(girlDB, content.type);
-
-          if(!isContentAllowed) {
-            return res.status(400).json({
-              ok: false,
-              message: 'Esa creadora no acepta este tipo de contenido'
-            })
-          }
-
-          var payment_data = {
-            transaction_amount: Number(paymentData.transactionAmount),
-            token: paymentData.token,
-            description: paymentData.description,
-            installments: Number(paymentData.installments),
-            payment_method_id: paymentData.paymentMethodId,
-            issuer_id: paymentData.issuerId,
-            payer: {
-              email: paymentData.payer.email
-            }
-          };
-          
-          mercadopago.payment.save(payment_data)
-            .then(function(response) {
-        
-              const newPurchase = new Purchase({
-                girlId,
-                userId,
-                contentType: content.type,
-                type: 'product',
-                amount: req.body.amount,
-                date: new Date(),
-                pending: (response.body.status == 'approved') ? false : true,
-                paymentId: response.body.id
-              })
-        
-              newPurchase.save((errPurchase, purchaseSaved) => {
-                if(errPurchase ){
-                  return res.status(500).json({
-                    ok: false,
-                    error: errPurchase
-                  })
-                }
-        
-                res.status(response.status).json({
-                  status: response.body.status,
-                  status_detail: response.body.status_detail,
-                  id: response.body.id
-                });
-              })
-            })
-            .catch(function(error) {
-              console.log(error);
-              // res.status(error.status).send(error);
-            });
-          
-      })
+    Subscription.findOne({
+      girlId: girlDB._id,
+      userId: userId
     })
+    .exec((subsErr, subscriptionDB) => {
+        if(subsErr) {
+            return res.status(500).json({
+                ok: false,
+                error: subsErr
+            })
+        }
+
+        if(!subscriptionDB) {
+            return res.status(400).json({
+                ok: false,
+                message: 'Debes estar subscripto para realizar esta compra'
+            })
+        }
+
+        const isContentAllowed = validateContent(girlDB, content.type);
+
+        if(!isContentAllowed) {
+          return res.status(400).json({
+            ok: false,
+            message: 'Esa creadora no acepta este tipo de contenido'
+          })
+        }
+
+        var payment_data = {
+          transaction_amount: Number(paymentData.transactionAmount),
+          token: paymentData.token,
+          description: paymentData.description,
+          installments: Number(paymentData.installments),
+          payment_method_id: paymentData.paymentMethodId,
+          issuer_id: paymentData.issuerId,
+          payer: {
+            email: paymentData.payer.email
+          }
+        };
+        
+        mercadopago.payment.save(payment_data)
+          .then((response) => {
+            const date_created = (response?.response?.date_created) ? response.response.date_created : new Date();
+      
+            const newPurchase = new Purchase({
+              girlId,
+              userId,
+              contentType: content.type,
+              type: 'product',
+              amount: req.body.amount,
+              date: date_created,
+              pending: (response.body.status == 'approved') ? false : true,
+              paymentId: response.body.id
+            })
+      
+            newPurchase.save((errPurchase, purchaseSaved) => {
+              if(errPurchase ){
+                return res.status(500).json({
+                  ok: false,
+                  error: errPurchase
+                })
+              }
+      
+              res.status(response.status).json({
+                status: response.body.status,
+                status_detail: response.body.status_detail,
+                id: response.body.id
+              });
+            })
+          })
+          .catch(function(error) {
+            console.log(error);
+            // res.status(error.status).send(error);
+          });
+        
+    })
+  })
 })
 
 module.exports = app;
