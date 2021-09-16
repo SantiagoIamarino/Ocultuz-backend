@@ -140,6 +140,14 @@ app.post('/', (req, res) => {
             })
         }
 
+        if(!body?.girl?._id) {
+            console.log(body);
+            return res.status(400).json({
+                ok: false,
+                message: 'No has seleccionado una chica'
+            })
+        }
+
         if(userDB.subscriptions && userDB.subscriptions.indexOf(body.girl._id) < 0){
             try {
                 const planId = await createPlan(body.amount);
@@ -178,6 +186,7 @@ app.post('/', (req, res) => {
                 
                     newSubscription.save((err, subscriptionSaved) => {
                         if(err) {
+                            console.log(err);
                             return res.status(500).json({
                                 ok: false,
                                 error: err

@@ -178,27 +178,25 @@ app.post('/get-basic-content/:girlId', mdAuth, (req, res) => {
               }) 
             }
 
-            if(subscriptionDB) {
-                const now = new Date();
-                const subscriptionEnding = new Date(subscriptionDB.nextPaymentDueDate);
+            const now = new Date();
+            const subscriptionEnding = new Date(subscriptionDB.nextPaymentDueDate);
 
-                if(now >= subscriptionEnding) {
+            if(now >= subscriptionEnding) {
 
-                    subscriptionDB.delete((errDlt, subscriptionDeleted) => {
-                        if(errDlt) {
-                            return res.status(500).json({
-                                ok: false,
-                                error: errDlt
-                            }) 
-                        }
-
-                        return res.status(400).json({
+                subscriptionDB.delete((errDlt, subscriptionDeleted) => {
+                    if(errDlt) {
+                        return res.status(500).json({
                             ok: false,
-                            message: 'Tu subscripción ha caducado'
-                        })
-                    })
-                }
+                            error: errDlt
+                        }) 
+                    }
 
+                    return res.status(400).json({
+                        ok: false,
+                        message: 'Tu subscripción ha caducado'
+                    })
+                })
+            } else {
                 Content.find({
                     girlId: girlId,
                     type: 'general'
