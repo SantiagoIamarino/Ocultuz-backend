@@ -165,11 +165,11 @@ app.post('/', (req, res) => {
                     }
                 }).then((response) => {
                     const subscription = response.data;
-                    // const daysBeforeCancell = config.daysBeforeCancell;
+                    const daysBeforeCancell = config.daysBeforeCancell + 2;
         
                     let nextPaymentDueDate = new Date(subscription.date_created);
-                    nextPaymentDueDate = nextPaymentDueDate.setDate(nextPaymentDueDate.getDate() + 2);
-                    // let nextPaymentDueDate = startDate.setMonth(startDate.getMonth() + 1);
+                    // nextPaymentDueDate = nextPaymentDueDate.setMonth(startDate.getMonth() + 1);
+                    nextPaymentDueDate = nextPaymentDueDate.setDate(nextPaymentDueDate.getDate() + daysBeforeCancell);
                 
                     const subscriptionData = {
                         userId: body.user._id,
