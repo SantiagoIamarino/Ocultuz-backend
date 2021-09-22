@@ -82,9 +82,13 @@ function verifySubscription(subscription, database) {
           'Content-Type': 'application/json',
       }
     }).then((response) => {
+      if(response.data.results.length == 0) {
+        console.log('Sub not found on MP - ', subscription.paymentData.preapproval_plan_id);
+        resolve();
+      }
 
-      const sub = response.data.results;
-      const subNextPayment = new Date(sub[0].next_payment_date);
+      const sub = response.data.results[0];
+      const subNextPayment = new Date(sub.next_payment_date);
       const dbNextPayment = new Date(subscription.nextPaymentDueDate);
 
       console.log(subscription._id, ' - ',subNextPayment, ' - ', dbNextPayment, ' - ', (subNextPayment > dbNextPayment));
