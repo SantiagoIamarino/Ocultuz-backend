@@ -166,16 +166,16 @@ app.post('/', (req, res) => {
                 }).then((response) => {
                     const subscription = response.data;
                     // const daysBeforeCancell = config.daysBeforeCancell;
-                    const startDate = subscription.auto_recurring.start_date;
         
-                    let nextPaymentDueDate = new Date(startDate);
+                    let nextPaymentDueDate = new Date(subscription.date_created);
+                    nextPaymentDueDate = nextPaymentDueDate.setDate(nextPaymentDueDate.getDate() + 2);
                     // let nextPaymentDueDate = startDate.setMonth(startDate.getMonth() + 1);
                 
                     const subscriptionData = {
                         userId: body.user._id,
                         girlId: body.girl._id,
                         type: 'subscription',
-                        subscribedSince: new Date(),
+                        subscribedSince: new Date(subscription.date_created),
                         nextPaymentDueDate,
                         paymentId: subscription.id,
                         paymentData: subscription,
@@ -194,7 +194,11 @@ app.post('/', (req, res) => {
                         }
         
                         // Creating purchase
-        
+                        const purchaseData = {
+                            ...subscriptionData,
+                            date: new Date(subscription.date_created)
+                        };
+                        
                         const purchase = new Purchase(subscriptionData);
                         
                         purchase.save(async (purchaseErr, purchaseSaved) => {
