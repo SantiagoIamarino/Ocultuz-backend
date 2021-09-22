@@ -48,7 +48,6 @@ const contentRoutes =  require('./routes/contents');
 const chatRoutes =  require('./routes/chat');
 const paymentsRoutes = require('./routes/payments');
 const webhookRoutes = require('./routes/webhook');
-const notificationsRoutes = require('./routes/notifications');
 
 //Conexion db
 // mongoose.connection.openUri('mongodb://localhost:27017/OcultuzDB', (err, res) => {
@@ -69,7 +68,6 @@ app.use('/contents', contentRoutes);
 app.use('/chat', chatRoutes);
 app.use('/payments', paymentsRoutes);
 app.use('/webhook', webhookRoutes);
-app.use('/notifications', notificationsRoutes);
 
 
 //Socket.io
