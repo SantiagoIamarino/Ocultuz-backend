@@ -2,14 +2,16 @@ const { MongoClient } = require("mongodb");
 const config = require('./config/vars');
 const axios = require('axios');
 
-// Connection URI
-const uri =
-  "mongodb://ocultuz:Ocultuz12@157.230.215.128:27017/OcultuzDB";
-
-// Create a new MongoClient
-const client = new MongoClient(uri);
+const schedule = require('node-schedule');
 
 async function run() {
+  // Connection URI
+  const uri =
+  "mongodb://ocultuz:Ocultuz12@157.230.215.128:27017/OcultuzDB";
+
+  // Create a new MongoClient
+  const client = new MongoClient(uri);
+
   try {
     // Connect the client to the server
     await client.connect();
@@ -111,5 +113,8 @@ function verifySubscription(subscription, database) {
   })
 }
 
-run()
-.catch(console.dir);
+const job = schedule.scheduleJob('* 0 * * *', () => {
+  run()
+    .catch(console.dir);
+});
+
