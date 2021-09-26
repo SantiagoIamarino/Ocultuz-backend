@@ -167,16 +167,17 @@ app.post('/', (req, res) => {
                     const subscription = response.data;
                     const daysBeforeCancell = config.daysBeforeCancell + 2;
         
-                    let nextPaymentDueDate = new Date(subscription.date_created);
-                    // nextPaymentDueDate = nextPaymentDueDate.setMonth(startDate.getMonth() + 1);
-                    nextPaymentDueDate = nextPaymentDueDate.setDate(nextPaymentDueDate.getDate() + daysBeforeCancell);
+                    let subscriptionEnds = new Date(subscription.date_created);
+                    // subscriptionEnds = subscriptionEnds.setMonth(startDate.getMonth() + 1);
+                    subscriptionEnds.setDate(subscriptionEnds.getDate() + daysBeforeCancell);
                 
                     const subscriptionData = {
                         userId: body.user._id,
                         girlId: body.girl._id,
                         type: 'subscription',
                         subscribedSince: new Date(subscription.date_created),
-                        nextPaymentDueDate,
+                        subscriptionEnds, 
+                        nextPaymentDueDate: new Date(subscription.date_created),
                         paymentId: subscription.id,
                         paymentData: subscription,
                         status: (subscription.status == 'authorized') ? 'completed' : 'pending'

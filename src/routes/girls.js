@@ -179,7 +179,7 @@ app.post('/get-basic-content/:girlId', mdAuth, (req, res) => {
             }
 
             const now = new Date();
-            const subscriptionEnding = new Date(subscriptionDB.nextPaymentDueDate);
+            const subscriptionEnding = new Date(subscriptionDB.subscriptionEnds);
 
             if(now >= subscriptionEnding) {
 

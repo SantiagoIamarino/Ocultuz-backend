@@ -57,10 +57,14 @@ async function updateSub(subId, nextPaymentDueDate, database) {
 
     const subscriptions = database.collection("subscriptions");
     const filter = { _id: subId };
+
+    let subscriptionEnds = new Date(nextPaymentDueDate);
+    subscriptionEnds.setDate(subscriptionEnds.getDate() + config.daysBeforeCancell);
   
     const updateDocument = {
       $set: {
           nextPaymentDueDate: nextPaymentDueDate,
+          subscriptionEnds: subscriptionEnds
       },
     };
   
@@ -117,7 +121,7 @@ function verifySubscription(subscription, database) {
   })
 }
 
-const job = schedule.scheduleJob('* 0 * * *', () => {
+const job = schedule.scheduleJob('0 0 * * *', () => {
   run()
     .catch(console.dir);
 });
