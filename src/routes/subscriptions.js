@@ -80,8 +80,8 @@ function createPlan(amount) {
             "back_url":"https://www.mercadopago.com.ar",
             "reason":"Ocultuz subscripción mensual",
             "auto_recurring":{
-                "frequency":"2",
-                "frequency_type":"days",
+                "frequency":"1",
+                "frequency_type":"months",
                 "transaction_amount": amount,
                 "currency_id":"MXN",
                 "repetitions":12
@@ -168,7 +168,7 @@ app.post('/', (req, res) => {
                     const daysBeforeCancell = config.daysBeforeCancell + 2;
         
                     let subscriptionEnds = new Date(subscription.date_created);
-                    // subscriptionEnds = subscriptionEnds.setMonth(startDate.getMonth() + 1);
+                    subscriptionEnds.setMonth(subscriptionEnds.getMonth() + 1);
                     subscriptionEnds.setDate(subscriptionEnds.getDate() + daysBeforeCancell);
                 
                     const subscriptionData = {

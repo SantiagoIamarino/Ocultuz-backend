@@ -183,7 +183,8 @@ app.post('/purchased/:girlId', [mdAuth, mdSameUser], (req, res) => {
 
   const mongooseFilters = {
     girlId,
-    type: 'product'
+    type: 'product',
+    pending: false
   }
 
   if(req.body.filter && req.body.filter.from && req.body.filter.to) {
