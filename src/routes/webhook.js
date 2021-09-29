@@ -76,9 +76,6 @@ app.post('/', (req, res) => {
                         }
                     });
                 } else {
-                    return res.status(200).json({
-                        ok: true
-                    })
                     //https://api.mercadopago.com/preapproval/search?access_token=APP_USR-5994785052999824-080720-b06d309f87d8a213c21a8b6676c1543d-803836590&preapproval_plan_id=2c9380847b62931d017b9973f148280d
 
                     Subscription.findOne({paymentId: paymentId}, 
@@ -99,9 +96,7 @@ app.post('/', (req, res) => {
                             console.log('Sub', subscription);
 
                             subscriptionDB.active = true;
-                            const startDate = subscription.auto_recurring.start_date;
-                            subscriptionDB.nextPaymentDueDate = new Date(startDate);
-    
+                            subscriptionDB.status = 'completed';
     
                             subscriptionDB.update(subscriptionDB, (errUpt, subUpdated) => {
                                 return res.status(200).json({

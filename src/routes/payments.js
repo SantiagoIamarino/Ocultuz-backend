@@ -4,6 +4,7 @@ const nodemailer = require('nodemailer');
 
 const User = require('../models/user');
 const Purchase = require('../models/purchase');
+const Subscription = require('../models/subscription');
 
 const config = require('../config/vars');
 
@@ -34,6 +35,39 @@ app.get('/get-store-options', mdAuth, (req, res) => {
 
 })
 
+function createSub(body, subscription) {
+    return new Promise((resolve, reject) => {
+        const daysBeforeCancell = config.daysBeforeCancell + 2;
+
+        let subscriptionEnds = new Date(subscription.date_created);
+        subscriptionEnds.setMonth(subscriptionEnds.getMonth() + 1);
+        subscriptionEnds.setDate(subscriptionEnds.getDate() + daysBeforeCancell);
+
+        const subscriptionData = {
+            userId: body.user._id,
+            girlId: body.girlId,
+            type: 'subscription',
+            subscribedSince: new Date(subscription.date_created),
+            subscriptionEnds, 
+            nextPaymentDueDate: new Date(subscription.date_created),
+            paymentId: subscription.id,
+            paymentData: subscription,
+            status: (subscription.status == 'approved') ? 'completed' : 'pending'
+        }
+
+        const newSubscription = new Subscription(subscriptionData);
+
+        newSubscription.save((err, subscriptionSaved) => {
+            if(err) {
+                console.log(err);
+                reject(error)
+            }
+
+            resolve();
+        })  
+    })
+}
+
 app.post('/store', mdAuth, (req, res) => {
     const body = req.body;
 
@@ -45,7 +79,7 @@ app.post('/store', mdAuth, (req, res) => {
                 userId: req.user._id,
                 girlId: body.girlId,
                 contentType: body.type,
-                type: 'product',
+                type: (body.type == 'subscription') ? 'subscription' : 'product',
                 pending: true,
                 date: date_created,
                 paymentId: charge.body.id,
@@ -56,13 +90,22 @@ app.post('/store', mdAuth, (req, res) => {
                 purchase.contentId = body._id;
             }
 
-            purchase.save((err, purchaseSaved) => {
+            purchase.save(async (err, purchaseSaved) => {
                 if(err) {
                     return res.status(500).json({
                         ok: false,
                         error: err
                     })
                 }
+
+                if(body.type == 'subscription') {
+                    await createSub(req.body, charge.body);
+                }
+
+                return res.status(200).json({
+                    ok: true,
+                    message: 'asdasdasdasd'
+                })
 
                 //Sending payment info email
 
