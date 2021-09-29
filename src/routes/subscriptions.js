@@ -39,7 +39,8 @@ app.post('/girl-subscriptions/:userId', [mdAuth, mdSameUser], (req, res) => {
     const page = req.body.page;
 
     const mongooseFilters = {
-      girlId: girlId
+      girlId: girlId,
+      status: 'completed'
     }
 
     if(req.body.filter && req.body.filter.from && req.body.filter.to) {

@@ -37,7 +37,7 @@ app.get('/get-store-options', mdAuth, (req, res) => {
 
 function createSub(body, subscription) {
     return new Promise((resolve, reject) => {
-        const daysBeforeCancell = config.daysBeforeCancell + 2;
+        const daysBeforeCancell = config.daysBeforeCancell;
 
         let subscriptionEnds = new Date(subscription.date_created);
         subscriptionEnds.setMonth(subscriptionEnds.getMonth() + 1);
@@ -101,11 +101,6 @@ app.post('/store', mdAuth, (req, res) => {
                 if(body.type == 'subscription') {
                     await createSub(req.body, charge.body);
                 }
-
-                return res.status(200).json({
-                    ok: true,
-                    message: 'asdasdasdasd'
-                })
 
                 //Sending payment info email
 
