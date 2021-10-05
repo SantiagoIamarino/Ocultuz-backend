@@ -51,10 +51,33 @@ async function run() {
   }
 }
 
-async function updateSub(subId, nextPaymentDueDate, database) {
+async function createPurchase(subscription, lastCharge, database) {
+  
+  return new Promise(async (resolve, reject) => {
+
+    const purchases = database.collection("purchases");
+
+    const purchaseData = {
+      userId: subscription.userId,
+      girlId: subscription.girlId,
+      type: 'subscription',
+      date: lastCharge,
+      amount: config.subscriptionPrice
+    };
+
+    await purchases.insertOne(purchaseData);
+
+    resolve();
+
+  })
+  
+}
+
+async function updateSub(subscription, nextPaymentDueDate, lastCharge, database) {
 
   return new Promise(async (resolve, reject) => {
 
+    const subId = subscription._id;
     const subscriptions = database.collection("subscriptions");
     const filter = { _id: subId };
 
@@ -69,6 +92,7 @@ async function updateSub(subId, nextPaymentDueDate, database) {
     };
   
     await subscriptions.updateOne(filter, updateDocument);
+    await createPurchase(subscription, lastCharge, database);
     resolve();
 
   })
@@ -92,14 +116,21 @@ function verifySubscription(subscription, database) {
       }
 
       const sub = response.data.results[0];
+
+      if(!sub?.next_payment_date) {
+        resolve();
+        return;
+      }
+
       const subNextPayment = new Date(sub.next_payment_date);
       const dbNextPayment = new Date(subscription.nextPaymentDueDate);
+      const lastCharge = sub.summarized.last_charged_date;
 
       console.log(subscription._id, ' - ',subNextPayment, ' - ', dbNextPayment, ' - ', (subNextPayment > dbNextPayment));
 
       if(subNextPayment > dbNextPayment) {
 
-        updateSub(subscription._id, subNextPayment, database).then(() => {
+        updateSub(subscription, subNextPayment, lastCharge, database).then(() => {
           console.log(subscription._id, ' - ', 'updated')
           resolve();
 

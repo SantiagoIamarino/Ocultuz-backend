@@ -40,7 +40,8 @@ app.post('/girl-subscriptions/:userId', [mdAuth, mdSameUser], (req, res) => {
 
     const mongooseFilters = {
       girlId: girlId,
-      status: 'completed'
+      pending: false,
+      type: 'subscription'
     }
 
     if(req.body.filter && req.body.filter.from && req.body.filter.to) {
@@ -201,7 +202,7 @@ app.post('/', (req, res) => {
                             date: new Date(subscription.date_created)
                         };
                         
-                        const purchase = new Purchase(subscriptionData);
+                        const purchase = new Purchase(purchaseData);
                         
                         purchase.save(async (purchaseErr, purchaseSaved) => {
                             if(purchaseErr) {
