@@ -157,7 +157,7 @@ app.post('/', (req, res) => {
                 const subscriptionRequest = {
                     "preapproval_plan_id":planId,
                     "card_token_id":body.cardToken,
-                    "payer_email": "test_user_16499481@testuser.com"
+                    "payer_email": "test_user_87758689@testuser.com"
                 };
             
                 axios.post('https://api.mercadopago.com/preapproval', subscriptionRequest, {
