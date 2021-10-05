@@ -51,7 +51,7 @@ app.post('/girl-subscriptions/:userId', [mdAuth, mdSameUser], (req, res) => {
       ];
     }
 
-    Subscription.find(mongooseFilters)
+    Purchase.find(mongooseFilters)
     .populate('userId')
     .skip(page * limit - limit)
     .limit(limit)
@@ -63,7 +63,7 @@ app.post('/girl-subscriptions/:userId', [mdAuth, mdSameUser], (req, res) => {
             })
         }
 
-        Subscription.count(mongooseFilters, (errCount, total) => {
+        Purchase.count(mongooseFilters, (errCount, total) => {
           return res.status(200).json({
             ok: true,
             total,
@@ -157,7 +157,7 @@ app.post('/', (req, res) => {
                 const subscriptionRequest = {
                     "preapproval_plan_id":planId,
                     "card_token_id":body.cardToken,
-                    "payer_email": "test_user_9965551@testuser.com"
+                    "payer_email": userDB.email
                 };
             
                 axios.post('https://api.mercadopago.com/preapproval', subscriptionRequest, {
@@ -199,7 +199,8 @@ app.post('/', (req, res) => {
                         // Creating purchase
                         const purchaseData = {
                             ...subscriptionData,
-                            date: new Date(subscription.date_created)
+                            date: new Date(subscription.date_created),
+                            amount: config.subscriptionPrice
                         };
                         
                         const purchase = new Purchase(purchaseData);
