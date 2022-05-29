@@ -142,7 +142,7 @@ app.post('/', (req, res) => {
             })
         }
 
-        if(!body?.girl?._id) {
+        if(!body.girl._id) {
             console.log(body);
             return res.status(400).json({
                 ok: false,

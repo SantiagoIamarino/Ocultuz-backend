@@ -4,6 +4,8 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const handleSocket = require('./sockets/main');
 
+require('dotenv').config();
+
 const app = express();
 
 //Habilitando CORS, no valido para produccion

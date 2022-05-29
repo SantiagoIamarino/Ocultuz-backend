@@ -7,36 +7,58 @@ const EmailRecover = require('../models/email-recover');
 
 const app = express();
 
-const sgMail = require('@sendgrid/mail')
-const SENDGRID_API_KEY = "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";
-
+const mailjet = require ('node-mailjet')
+  .connect(process.env.MAILJET_KEY, process.env.MAILJEY_SECRET)
 
 app.get('/', (req, res) => {
-  
-  sgMail.setApiKey(SENDGRID_API_KEY)
-  const msg = {
-    to: 'santiagoiamarino@outlook.com', // Change to your recipient
-    from: 'santiagoiamarino@gmail.com', // Change to your verified sender
-    subject: 'Sending with SendGrid is Fun',
-    html: '<strong>and easy to do anywhere, even with Node.js</strong>',
+
+  const data = {
+    to: "santiago.a.iamarino@gmail.com",
+    subject: 'Recupera tu contraseña | Ocultuz',
+    html:"<p>Test</p>"
   }
-  sgMail
-    .send(msg)
-    .then((info) => {
-      return res.status(200).json({
-        ok: true,
-        info, 
-        message: 'Correo enviado correctamente'
-      })
+
+  sendEmail(data).then((response) => {
+    return res.status(200).json({
+      ok: true,
+      response
     })
-    .catch((error) => {
-      return res.status(500).json({
-        ok: true,
-        error
-      })
+  })
+  .catch(error => {
+    return res.status(500).json({
+      ok: true,
+      error
     })
+  })
 
 })
+
+function sendEmail(data) {
+
+  const request = mailjet
+    .post("send", {'version': 'v3.1'})
+    .request({
+      "Messages":[
+        {
+          "From": {
+            "Email": "santiagoiamarino@outlook.com",
+            "Name": "Ocultuz"
+          },
+          "To": [
+            {
+              "Email": data.to,
+              "Name": "Santiago"
+            }
+          ],
+          "Subject": data.subject,
+          "HTMLPart": data.html,
+        }
+      ]
+    })
+
+   return request;
+
+}
 
 app.post('/recover-password', (req, res) => {
     const email = req.body.email;
