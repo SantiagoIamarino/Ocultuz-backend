@@ -8,11 +8,6 @@ const app = express();
 
 const { sendEmail, toBase64 } = require('../config/emails')
 
-app.get('/', async (req, res) => {
-  const img = await toBase64('src/assets/Logo.png')
-  console.log(img)
-  return res.status(200).json({img})
-})
 
 app.post('/recover-password', (req, res) => {
     const email = req.body.email;
