@@ -1,3 +1,5 @@
+const EMAIL_SENDER = "soporte@ocultuz.com";
+
 const mailjet = require ('node-mailjet')
   .connect(process.env.MAILJET_KEY, process.env.MAILJEY_SECRET)
 
@@ -32,13 +34,13 @@ function sendEmail(data) {
       "Messages":[
         {
           "From": {
-            "Email": "santiagoiamarino@outlook.com",
+            "Email": EMAIL_SENDER,
             "Name": "Ocultuz"
           },
           "To": [
             {
               "Email": data.to,
-              "Name": "Santiago"
+              "Name": "Usuario Ocultuz"
             }
           ],
           "Subject": data.subject,

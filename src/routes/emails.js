@@ -75,7 +75,7 @@ app.post('/recover-password', (req, res) => {
 
         if(email.indexOf('@gmail.') > 0) {
 
-          html += `<span>alpha</span><img class="main-img" src="cid:id1">`;
+          html += `<img class="main-img" src="cid:id1">`;
           // attachments = [{
           //   Filename: 'Logo.png',
           //   ContentType: "image/png",
@@ -171,7 +171,7 @@ app.post('/verify-account', (req, res) => {
 
       if(email.indexOf('@gmail.') > 0) {
 
-        html += `<span>alpha</span><img class="main-img" src="cid:id1">`;
+        html += `<img class="main-img" src="cid:id1">`;
         // attachments = [{
         //   Filename: 'Logo.png',
         //   ContentType: "image/png",
