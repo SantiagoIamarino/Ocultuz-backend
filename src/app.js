@@ -11,8 +11,7 @@ const app = express();
 //Habilitando CORS, no valido para produccion
 
 app.use(function(req, res, next) {
-    // res.header("Access-Control-Allow-Origin", "*");
-        res.header("Access-Control-Allow-Origin", "https://ocultuz.com");
+    res.header("Access-Control-Allow-Origin", process.env.ALLOWED_ORIGINS);
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     res.header("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE, OPTIONS");
     next();
@@ -24,19 +23,26 @@ app.use(bodyParser.json({limit: '25mb'}));
 var fileupload = require("express-fileupload");
 app.use(fileupload());
 
-const fs = require('fs');
+let server = require('http').createServer(app);
 
-const httpsOptions = {
+if(process.env.ENV_TYPE == 'prod') { // Prod only
 
-    key: fs.readFileSync("/etc/ssl/ocultuz_com.key"),
+    const fs = require('fs');
 
-    cert: fs.readFileSync("/etc/ssl/ocultuz_com.crt"),
-};
+    const httpsOptions = {
 
-const https = require('https').createServer(httpsOptions, app);
-const io = require('socket.io')(https, {
+        key: fs.readFileSync("/etc/ssl/ocultuz_com.key"),
+
+        cert: fs.readFileSync("/etc/ssl/ocultuz_com.crt"),
+    }
+
+    server = require('https').createServer(httpsOptions, app);
+
+}
+
+const io = require('socket.io')(server, {
     cors: {
-        origin: "*", // -----Change in PROD-----
+        origin: process.env.ALLOWED_ORIGINS,
         methods: ["GET", "POST"]
     }
 });
@@ -53,8 +59,7 @@ const paymentsRoutes = require('./routes/payments');
 const webhookRoutes = require('./routes/webhook');
 
 //Conexion db
-// mongoose.connection.openUri('mongodb://localhost:27017/OcultuzDB', (err, res) => {
-mongoose.connection.openUri('mongodb://ocultuz:Ocultuz12@157.230.215.128:27017/OcultuzDB', (err, res) => {
+mongoose.connection.openUri(process.env.DATABASE_URL, (err, res) => {
     if (err) throw err;
 
     console.log('Database running fine!');
@@ -79,6 +84,6 @@ io.on('connection', (socket) => {
 });
 
 //Escuchar peticiones
-https.listen(8443, () => {
-    console.log('Express running on port 8443');
+server.listen(process.env.PORT, () => {
+    console.log(`Express running on port ${ process.env.PORT }`);
 })
