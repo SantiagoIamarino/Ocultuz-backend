@@ -38,7 +38,8 @@ const girlSchema = new Schema({
     previewImage: { type: String },
     basicContent: { type: Array },
     products: { type: Array },
-    tips: { type: Object, default: tipsDefault }
+    tips: { type: Object, default: tipsDefault },
+    subscriptionPrice: { type: Number, default: 15 },
 });
 
 module.exports = mongoose.model('Girl', girlSchema);

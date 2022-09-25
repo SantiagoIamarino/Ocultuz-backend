@@ -392,8 +392,9 @@ app.post('/login', (req, res) => {
                 message: 'Las credenciales son incorrectas'
             })
         }
-
-        if(userDB.loginStatus && userDB.loginStatus.logged) {
+        
+        const envType = process.env.ENV_TYPE;
+        if(userDB.loginStatus && userDB.loginStatus.logged && envType == 'prod') {
             return res.status(400).json({
                 ok: false,
                 message: 'Ya te encuentras logueado, la sesión debe ser única'

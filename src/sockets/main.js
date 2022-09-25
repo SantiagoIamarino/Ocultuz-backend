@@ -2,8 +2,9 @@ const Message = require('../models/message');
 const ChatNotification = require('../models/chat-notification');
 const User = require('../models/user');
 
+const envType = process.env.ENV_TYPE;
 function verifyUserStatus(io = null, user, socketId) {
-    if(user.loginStatus.sessionId !== socketId){
+    if(user.loginStatus.sessionId !== socketId && envType == 'prod'){
         if(!io) {
             return;
         }

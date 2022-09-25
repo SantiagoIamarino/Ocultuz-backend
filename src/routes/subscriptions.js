@@ -200,7 +200,7 @@ app.post('/', (req, res) => {
                         const purchaseData = {
                             ...subscriptionData,
                             date: new Date(subscription.date_created),
-                            amount: config.subscriptionPrice
+                            amount: body.girl.subscriptionPrice
                         };
                         
                         const purchase = new Purchase(purchaseData);

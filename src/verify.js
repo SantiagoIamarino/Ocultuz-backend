@@ -1,13 +1,13 @@
 const { MongoClient } = require("mongodb");
 const config = require('./config/vars');
 const axios = require('axios');
+require('dotenv').config();
 
 const schedule = require('node-schedule');
 
 async function run() {
   // Connection URI
-  const uri =
-  "mongodb://ocultuz:Ocultuz12@157.230.215.128:27017/OcultuzDB";
+  const uri = process.env.DATABASE_URL;
 
   // Create a new MongoClient
   const client = new MongoClient(uri);
@@ -57,12 +57,15 @@ async function createPurchase(subscription, lastCharge, database) {
 
     const purchases = database.collection("purchases");
 
+    const girls = database.collection("girls")
+    const girl = await girls.findOne({ _id: subscription.girlId });
+
     const purchaseData = {
       userId: subscription.userId,
       girlId: subscription.girlId,
       type: 'subscription',
       date: lastCharge,
-      amount: config.subscriptionPrice
+      amount: girl.subscriptionPrice
     };
 
     await purchases.insertOne(purchaseData);
@@ -100,6 +103,12 @@ async function updateSub(subscription, nextPaymentDueDate, lastCharge, database)
 }
 
 function verifySubscription(subscription, database) {
+
+  if(!subscription.paymentData.preapproval_plan_id) {
+    console.log('No preapproval_plan_id', ' Sub ID: ', subscription._id));
+    return;
+  }
+
   let url = "https://api.mercadopago.com/preapproval/search";
   url += `?access_token=${ config.mpAccessToken }`;
   url += `&preapproval_plan_id=${subscription.paymentData.preapproval_plan_id}`;
@@ -151,6 +160,7 @@ function verifySubscription(subscription, database) {
     });
   })
 }
+run();return;
 
 const job = schedule.scheduleJob('0 0 * * *', () => {
   run()

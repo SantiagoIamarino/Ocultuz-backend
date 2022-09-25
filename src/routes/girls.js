@@ -34,7 +34,7 @@ const app = express();
 
 app.get('/', (req, res) => {
 
-    Girl.find({identityVerified: true}, '_id previewImage nickname status', (err, girls) => {
+    Girl.find({identityVerified: true}, '_id previewImage nickname status subscriptionPrice', (err, girls) => {
 
         if(err) {
             return res.status(500).json({
