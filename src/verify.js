@@ -105,7 +105,7 @@ async function updateSub(subscription, nextPaymentDueDate, lastCharge, database)
 function verifySubscription(subscription, database) {
 
   if(!subscription.paymentData.preapproval_plan_id) {
-    console.log('No preapproval_plan_id', ' Sub ID: ', subscription._id));
+    console.log('No preapproval_plan_id', ' Sub ID: ', subscription._id);
     return;
   }
 
