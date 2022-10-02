@@ -159,8 +159,7 @@ function verifySubscription(subscription, database) {
       reject();
     });
   })
-}
-run();return;
+};
 
 const job = schedule.scheduleJob('0 0 * * *', () => {
   run()
