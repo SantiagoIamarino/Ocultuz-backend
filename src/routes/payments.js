@@ -13,6 +13,8 @@ mercadopago.configure({
     access_token: config.mpAccessToken
 });
 
+const { sendEmail, toBase64 } = require('../config/emails')
+
 const mdAuth = require('../middlewares/auth').verifyToken;
 
 app.get('/get-store-options', mdAuth, (req, res) => {
