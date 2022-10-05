@@ -153,6 +153,14 @@ function validateContent(content, user) {
   
 }
 
+function validateSub(subscriptionDB) {
+    if(!subscriptionDB || !subscriptionDB.active) {
+        return false;
+    }
+
+    return true;
+}
+
 app.post('/get-basic-content/:girlId', mdAuth, (req, res) => {
     const girlId = req.params.girlId;
     const perPage = req.body.perPage;
@@ -170,8 +178,8 @@ app.post('/get-basic-content/:girlId', mdAuth, (req, res) => {
                     error: errSubs
                 })
             }
-    
-            if(!subscriptionDB && req.user.role !== 'ADMIN_ROLE') {
+
+            if(!validateSub(subscriptionDB) && req.user.role !== 'ADMIN_ROLE') {
               return res.status(400).json({
                     ok: false,
                     message: 'No te encuentras subscripto a esta creadora'
@@ -179,9 +187,9 @@ app.post('/get-basic-content/:girlId', mdAuth, (req, res) => {
             }
 
             const now = new Date();
-            const subscriptionEnding = new Date(subscriptionDB.subscriptionEnds);
+            const subscriptionEnding = (subscriptionDB) ? new Date(subscriptionDB.subscriptionEnds) : 0;
 
-            if(now >= subscriptionEnding) {
+            if( req.user.role !== 'ADMIN_ROLE' && now >= subscriptionEnding) {
 
                 subscriptionDB.delete((errDlt, subscriptionDeleted) => {
                     if(errDlt) {

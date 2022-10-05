@@ -15,7 +15,7 @@ const app = express();
 app.get('/user-subscriptions/:userId', [mdAuth, mdSameUser], (req, res) => {
     const userId = req.params.userId;
     Subscription
-        .find({userId:userId })
+        .find({ userId:userId, active: true })
         .populate('userId')
         .populate('girlId')
         .exec((err, subscriptions) => {

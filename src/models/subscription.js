@@ -11,7 +11,7 @@ const subscriptionSchema = new Schema({
     status: { type: String, default: 'completed' },
     paymentData: { type: Object, required: true },
     paymentId: { type: String, require: true },
-    active: { type: Boolean, default: true }
+    active: { type: Boolean, default: false }
 })
 
 subscriptionSchema.virtual('user', {
