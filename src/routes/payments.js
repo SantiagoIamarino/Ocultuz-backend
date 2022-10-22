@@ -28,7 +28,7 @@ function createPlan(amount, girlName) {
 
       const price = await stripe.prices.create({
         unit_amount: parseFloat(amount) * 100, // Amount in cents
-        currency: "mxn",
+        currency: "usd",
         recurring: { interval: "month" },
         product: product.id,
       });
@@ -80,6 +80,43 @@ app.post("/create-payment-link", mdAuth, async (req, res) => {
       error,
     });
   }
+});
+
+app.post("/create-manage-billing-link", mdAuth, async (req, res) => {
+  const userId = req.user._id;
+  const subscription = req.body;
+  const customerId = subscription.paymentData.customer;
+
+  // Validating that the user has this subscription associated
+  const subDB = await Subscription.findById(subscription._id);
+  const subDBCustomerId = subDB.paymentData.customer;
+  const subDbUserId = subDB.userId?._id ? subDB.userId._id : subDB.userId;
+
+  if (subDBCustomerId != customerId || subDbUserId != userId) {
+    return res.status(401).json({
+      ok: false,
+      error: "No tienes permiso para realizar esta acción",
+    });
+  }
+
+  try {
+    const returnUrl = `${process.env.FRONTEND_URL}/#/mis-subscripciones`;
+
+    var portalSession = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: returnUrl,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      error,
+    });
+  }
+
+  return res.status(200).json({
+    ok: true,
+    url: portalSession.url,
+  });
 });
 
 app.get("/get-store-options", mdAuth, (req, res) => {
