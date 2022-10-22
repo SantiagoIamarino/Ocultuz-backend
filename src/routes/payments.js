@@ -64,7 +64,7 @@ app.post("/create-payment-link", mdAuth, async (req, res) => {
           girlId: girl._id,
         },
         success_url: `${process.env.FRONTEND_URL}?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.FRONTEND_URL}/cancelled`,
+        cancel_url: `${process.env.FRONTEND_URL}`,
       };
     }
 

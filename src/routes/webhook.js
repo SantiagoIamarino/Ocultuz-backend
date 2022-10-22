@@ -67,7 +67,7 @@ const addOrRemoveUserSub = async (userId, girlId, remove = false) => {
       // If exists remove
       userDB.subscriptions.splice(userDB.subscriptions.indexOf(girlId), 1);
     } else {
-      return;
+      return Promise.resolve();
     }
   }
 
@@ -77,7 +77,7 @@ const addOrRemoveUserSub = async (userId, girlId, remove = false) => {
   }
 
   delete userDB._id;
-  return userDB.update();
+  return userDB.update(userDB);
 };
 
 const createSubscription = async (data) => {
@@ -107,7 +107,10 @@ const createSubscription = async (data) => {
 
   const subscriptionDB = await subscription.save();
 
-  await addOrRemoveUserSub(data.metadata.userId, data.metadata.girlId);
+  const userUpdated = await addOrRemoveUserSub(
+    data.metadata.userId,
+    data.metadata.girlId
+  );
 
   return {
     userUpdated,
@@ -134,9 +137,9 @@ const updateSubscription = async (data) => {
   subscriptionDB.paymentData = data;
   delete subscriptionDB._id;
 
-  const subscriptionUpdated = await subscriptionDB.update();
+  const subscriptionUpdated = await subscriptionDB.update(subscriptionDB);
 
-  await addOrRemoveUserSub(data.metadata.userId, data.metadata.girlId);
+  await addOrRemoveUserSub(subscriptionDB.userId, subscriptionDB.girlId);
 
   return subscriptionUpdated;
 };
@@ -155,9 +158,9 @@ const cancelSubscription = async (data) => {
   subscriptionDB.status = "canceled";
   delete subscriptionDB._id;
 
-  const subscriptionUpdated = await subscriptionDB.update();
+  const subscriptionUpdated = await subscriptionDB.update(subscriptionDB);
 
-  await addOrRemoveUserSub(data.metadata.userId, data.metadata.girlId, true);
+  await addOrRemoveUserSub(subscriptionDB.userId, subscriptionDB.girlId, true);
 
   return subscriptionUpdated;
 };
