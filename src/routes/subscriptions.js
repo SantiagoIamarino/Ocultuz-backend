@@ -76,34 +76,6 @@ app.post('/girl-subscriptions/:userId', [mdAuth, mdSameUser], (req, res) => {
 
 })
 
-function createPlan(amount) {
-    return new Promise((resolve, reject) => {
-        const planRequest = {
-            "back_url":"https://www.mercadopago.com.ar",
-            "reason":"Ocultuz subscripción mensual",
-            "auto_recurring":{
-                "frequency":"1",
-                "frequency_type":"months",
-                "transaction_amount": amount,
-                "currency_id":"MXN",
-                "repetitions":12
-            }
-        };
-    
-        axios.post('https://api.mercadopago.com/preapproval_plan', planRequest, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + config.mpAccessToken
-            }
-        }).then((response) => {
-            resolve(response.data.id);
-        }).catch((error) => {
-            console.log(error)
-            reject(error.data);
-        })
-    })
-}
-
 function updateUserSubs(userToUpdate) {
     return new Promise((resolve, reject) => {
         User.findById(userToUpdate._id, (err, userDB) => {
@@ -150,99 +122,99 @@ app.post('/', (req, res) => {
             })
         }
 
-        if(userDB.subscriptions && userDB.subscriptions.indexOf(body.girl._id) < 0){
-            try {
-                const planId = await createPlan(body.amount);
-
-                const subscriptionRequest = {
-                    "preapproval_plan_id":planId,
-                    "card_token_id":body.cardToken,
-                    "payer_email": userDB.email
-                };
-            
-                axios.post('https://api.mercadopago.com/preapproval', subscriptionRequest, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + config.mpAccessToken
-                    }
-                }).then((response) => {
-                    const subscription = response.data;
-                    const daysBeforeCancell = config.daysBeforeCancell + 2;
-        
-                    let subscriptionEnds = new Date(subscription.date_created);
-                    subscriptionEnds.setMonth(subscriptionEnds.getMonth() + 1);
-                    subscriptionEnds.setDate(subscriptionEnds.getDate() + daysBeforeCancell);
-                
-                    const subscriptionData = {
-                        userId: body.user._id,
-                        girlId: body.girl._id,
-                        type: 'subscription',
-                        subscribedSince: new Date(subscription.date_created),
-                        subscriptionEnds, 
-                        nextPaymentDueDate: new Date(subscription.date_created),
-                        paymentId: subscription.id,
-                        paymentData: subscription,
-                        status: (subscription.status == 'authorized') ? 'completed' : 'pending'
-                    }
-                
-                    const newSubscription = new Subscription(subscriptionData);
-                
-                    newSubscription.save((err, subscriptionSaved) => {
-                        if(err) {
-                            console.log(err);
-                            return res.status(500).json({
-                                ok: false,
-                                error: err
-                            })
-                        }
-        
-                        // Creating purchase
-                        const purchaseData = {
-                            ...subscriptionData,
-                            date: new Date(subscription.date_created),
-                            amount: body.girl.subscriptionPrice
-                        };
-                        
-                        const purchase = new Purchase(purchaseData);
-                        
-                        purchase.save(async (purchaseErr, purchaseSaved) => {
-                            if(purchaseErr) {
-                                return res.status(500).json({
-                                    ok: false,
-                                    error: purchaseErr
-                                })
-                            }
-        
-                            userDB.subscriptions.push(body.girl._id);
-        
-                            await updateUserSubs(userDB);
-        
-                            return res.status(201).json({
-                                ok: true,
-                                user: userDB,
-                                message: 'Te has subscripto correctamente a esta creadora'
-                            })
-                        })
-                    })
-                }).catch((error) => {
-                    console.log(error);
-                    return res.status(200).json({
-                        ok: false,
-                        error: error
-                    })
-                })
-        
-            } catch (error) {
-                console.log(error);
-                return res.status(500).json({
-                    ok: false,
-                    message: 'Ha ocurrido un error al procesar el pago'
-                })
-            }
-        } else {
+        if(!userDB.subscriptions || userDB.subscriptions.indexOf(body.girl._id) < 0){
             return res.status(400).json({
                 ok: false,
                 message: 'Ya te has subscrito a esta creadora'
+            })
+        }
+
+        try {
+            const planId = await createPlan(body.amount);
+
+            const subscriptionRequest = {
+                "preapproval_plan_id":planId,
+                "card_token_id":body.cardToken,
+                "payer_email": userDB.email
+            };
+        
+            axios.post('https://api.mercadopago.com/preapproval', subscriptionRequest, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + config.mpAccessToken
+                }
+            }).then((response) => {
+                const subscription = response.data;
+                const daysBeforeCancell = config.daysBeforeCancell + 2;
+    
+                let subscriptionEnds = new Date(subscription.date_created);
+                subscriptionEnds.setMonth(subscriptionEnds.getMonth() + 1);
+                subscriptionEnds.setDate(subscriptionEnds.getDate() + daysBeforeCancell);
+            
+                const subscriptionData = {
+                    userId: body.user._id,
+                    girlId: body.girl._id,
+                    type: 'subscription',
+                    subscribedSince: new Date(subscription.date_created),
+                    subscriptionEnds, 
+                    nextPaymentDueDate: new Date(subscription.date_created),
+                    paymentId: subscription.id,
+                    paymentData: subscription,
+                    status: (subscription.status == 'authorized') ? 'completed' : 'pending'
+                }
+            
+                const newSubscription = new Subscription(subscriptionData);
+            
+                newSubscription.save((err, subscriptionSaved) => {
+                    if(err) {
+                        console.log(err);
+                        return res.status(500).json({
+                            ok: false,
+                            error: err
+                        })
+                    }
+    
+                    // Creating purchase
+                    const purchaseData = {
+                        ...subscriptionData,
+                        date: new Date(subscription.date_created),
+                        amount: body.girl.subscriptionPrice
+                    };
+                    
+                    const purchase = new Purchase(purchaseData);
+                    
+                    purchase.save(async (purchaseErr, purchaseSaved) => {
+                        if(purchaseErr) {
+                            return res.status(500).json({
+                                ok: false,
+                                error: purchaseErr
+                            })
+                        }
+    
+                        userDB.subscriptions.push(body.girl._id);
+    
+                        await updateUserSubs(userDB);
+    
+                        return res.status(201).json({
+                            ok: true,
+                            user: userDB,
+                            message: 'Te has subscripto correctamente a esta creadora'
+                        })
+                    })
+                })
+            }).catch((error) => {
+                console.log(error);
+                return res.status(200).json({
+                    ok: false,
+                    error: error
+                })
+            })
+    
+        } catch (error) {
+            console.log(error);
+            return res.status(500).json({
+                ok: false,
+                message: 'Ha ocurrido un error al procesar el pago'
             })
         }
     

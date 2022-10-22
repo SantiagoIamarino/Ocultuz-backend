@@ -1,5 +1,5 @@
 <CORSConfiguration>
- <CORSRule>
+  <CORSRule>
    <AllowedOrigin>http://localhost:8443</AllowedOrigin>;
    <AllowedOrigin>http://localhost:4200</AllowedOrigin>;
    <AllowedOrigin>https://ocultuz.com:8443</AllowedOrigin>;
