@@ -4,7 +4,10 @@ const app = express();
 const Subscription = require("../models/subscription");
 const Purchase = require("../models/purchase");
 const User = require("../models/user");
-const { timestampToISODate } = require("../config/functions");
+const {
+  timestampToISODate,
+  addOrRemoveUserSub,
+} = require("../config/functions");
 
 const axios = require("axios");
 const config = require("../config/vars");
@@ -59,27 +62,6 @@ const signWebhookRequest = (req, res) => {
   };
 };
 
-const addOrRemoveUserSub = async (userId, girlId, remove = false) => {
-  const userDB = await User.findById(userId);
-
-  if (userDB.subscriptions.indexOf(girlId) >= 0) {
-    if (remove) {
-      // If exists remove
-      userDB.subscriptions.splice(userDB.subscriptions.indexOf(girlId), 1);
-    } else {
-      return Promise.resolve();
-    }
-  }
-
-  if (!remove) {
-    // If not exists and remove is false add
-    userDB.subscriptions.push(girlId);
-  }
-
-  delete userDB._id;
-  return userDB.update(userDB);
-};
-
 const createSubscription = async (data) => {
   const purchase = new Purchase({
     userId: data.metadata.userId,
@@ -92,12 +74,15 @@ const createSubscription = async (data) => {
 
   const purchaseDB = await purchase.save();
 
+  const oneMonthAHead = new Date();
+  oneMonthAHead.setMonth(oneMonthAHead.getMonth() + 1);
+
   const subscription = new Subscription({
     userId: data.metadata.userId,
     girlId: data.metadata.girlId,
-    subscribedSince: timestampToISODate(data.created),
-    subscriptionEnds: timestampToISODate(data.expires_at),
-    nextPaymentDueDate: timestampToISODate(data.next_payment_attempt),
+    subscribedSince: new Date(),
+    subscriptionEnds: oneMonthAHead,
+    nextPaymentDueDate: oneMonthAHead,
     paymentId: data.subscription,
     purchaseId: purchaseDB._id,
     active: true,
@@ -128,12 +113,13 @@ const updateSubscription = async (data) => {
     return;
   }
 
+  const oneMonthAHead = new Date();
+  oneMonthAHead.setMonth(oneMonthAHead.getMonth() + 1);
+
   subscriptionDB.active = true;
   subscriptionDB.status = "completed";
-  subscriptionDB.subscriptionEnds = timestampToISODate(data.expires_at);
-  subscriptionDB.nextPaymentDueDate = timestampToISODate(
-    data.next_payment_attempt
-  );
+  subscriptionDB.subscriptionEnds = oneMonthAHead;
+  subscriptionDB.nextPaymentDueDate = oneMonthAHead;
   subscriptionDB.paymentData = data;
   delete subscriptionDB._id;
 
@@ -203,14 +189,43 @@ const sendPaymentFailedEmail = async (data) => {
   return sendEmail(emailData);
 };
 
+const contentBought = async (data) => {
+  const paymentCreated = await Purchase.findOne({
+    paymentId: data.id,
+  });
+
+  if (paymentCreated) {
+    return;
+  }
+
+  const { girlId, userId, contentType } = data.metadata;
+  const newPurchase = new Purchase({
+    girlId,
+    userId,
+    contentType,
+    type: "product",
+    amount: data.amount_subtotal / 100,
+    date: new Date(),
+    pending: false,
+    hasBeenSent: false,
+    paymentId: data.id,
+  });
+
+  return newPurchase.save();
+};
+
 app.post("/card-payments", async (req, res) => {
   let { data, eventType } = signWebhookRequest(req, res);
 
   try {
     switch (eventType) {
       case "checkout.session.completed":
-        console.log(eventType);
-        await createSubscription(data.object);
+        console.log(eventType, data.object.mode);
+        if (data.object.mode === "subscription") {
+          await createSubscription(data.object);
+        } else {
+          await contentBought(data.object);
+        }
         break;
 
       case "invoice.paid":

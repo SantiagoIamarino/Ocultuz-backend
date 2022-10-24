@@ -45,27 +45,42 @@ function createPlan(amount, girlName) {
 
 app.post("/create-payment-link", mdAuth, async (req, res) => {
   try {
-    let data = null;
+    const { price, girl, description, contentType } = req.body;
+
+    let data = {
+      mode: req.body.type,
+      line_items: null,
+      metadata: {
+        userId: req.user._id,
+        girlId: girl._id,
+        contentType,
+      },
+      success_url: `${process.env.FRONTEND_URL}?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.FRONTEND_URL}`,
+    };
 
     if (req.body.type == "subscription") {
-      const { subscriptionPrice, girl } = req.body;
-      const plan = await createPlan(subscriptionPrice, girl.nickname);
+      const plan = await createPlan(price, girl.nickname);
 
-      data = {
-        mode: req.body.type,
-        line_items: [
-          {
-            price: plan.price.id,
-            quantity: 1,
-          },
-        ],
-        metadata: {
-          userId: req.user._id,
-          girlId: girl._id,
+      data.line_items = [
+        {
+          price: plan.price.id,
+          quantity: 1,
         },
-        success_url: `${process.env.FRONTEND_URL}?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.FRONTEND_URL}`,
-      };
+      ];
+    } else {
+      data.line_items = [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: description,
+            },
+            unit_amount: parseFloat(price) * 100, // Price in cents
+          },
+          quantity: 1,
+        },
+      ];
     }
 
     const session = await stripe.checkout.sessions.create(data);
