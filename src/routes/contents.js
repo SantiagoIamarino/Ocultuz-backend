@@ -11,8 +11,9 @@ const mdSameUser = require("../middlewares/same-user").verifySameUserOrAdmin;
 const config = require("../config/vars");
 
 const mercadopago = require("mercadopago");
+const mpAccessToken = process.env.MP_ACCESS_TOKEN;
 mercadopago.configure({
-  access_token: config.mpAccessToken,
+  access_token: mpAccessToken,
 });
 
 const app = express();

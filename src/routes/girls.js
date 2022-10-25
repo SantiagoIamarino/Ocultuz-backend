@@ -15,9 +15,6 @@ const multerS3 = require("multer-s3");
 
 const spacesEndpoint = new AWS.Endpoint("nyc3.digitaloceanspaces.com");
 
-process.env.SPACES_KEY = "PKUGPKZX5KPU3ESW4GUK";
-process.env.SPACES_SECRET = "leocn1edNgznf7nzAQ3TQ697pCG+gRAsHgabJXtEGVY";
-
 const s3 = new AWS.S3({
   endpoint: spacesEndpoint,
   accessKeyId: process.env.SPACES_KEY,
