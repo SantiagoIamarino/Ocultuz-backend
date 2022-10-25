@@ -203,9 +203,12 @@ app.post("/get-basic-content/:girlId", mdAuth, async (req, res) => {
 
     // Validating if has an active subscription or is an admin
     if (!validateSub(subscriptionDB) && req.user.role !== "ADMIN_ROLE") {
+      const userDB = await addOrRemoveUserSub(req.user._id, girlId, true);
       return res.status(400).json({
         ok: false,
         message: "No te encuentras subscripto a esta creadora",
+        user: userDB,
+        needsToRefresh: true,
       });
     }
 
@@ -247,9 +250,12 @@ app.post("/get-exclusive-content/:girlId", mdAuth, (req, res) => {
       }
 
       if (!subscriptionDB && req.user.role !== "ADMIN_ROLE") {
+        const userDB = await addOrRemoveUserSub(req.user._id, girlId, true);
         return res.status(400).json({
           ok: false,
           message: "No te encuentras subscripto a esta creadora",
+          user: userDB,
+          needsToRefresh: true,
         });
       }
 

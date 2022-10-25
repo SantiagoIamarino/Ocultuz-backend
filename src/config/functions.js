@@ -25,7 +25,8 @@ const addOrRemoveUserSub = async (userId, girlId, remove = false) => {
   }
 
   delete userDB._id;
-  return userDB.update(userDB);
+  await userDB.update(userDB);
+  return userDB;
 };
 
 module.exports = {

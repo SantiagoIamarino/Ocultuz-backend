@@ -32,6 +32,14 @@ const signWebhookRequest = (req, res) => {
 };
 
 const createSubscription = async (data) => {
+  const existingSubscription = await Subscription.findOne({
+    paymentId: data.subscription,
+  });
+
+  if (existingSubscription) {
+    return;
+  }
+
   const purchase = new Purchase({
     userId: data.metadata.userId,
     girlId: data.metadata.girlId,
