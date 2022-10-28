@@ -62,6 +62,7 @@ const paymentsRoutes = require("./routes/payments");
 const webhookRoutes = require("./routes/webhook");
 
 //Conexion db
+console.log(process.env.DATABASE_URL);
 mongoose.connection.openUri(process.env.DATABASE_URL, (err, res) => {
   if (err) throw err;
 
