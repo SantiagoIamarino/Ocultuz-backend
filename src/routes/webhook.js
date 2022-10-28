@@ -37,7 +37,7 @@ app.post("/store-payment", async (req, res) => {
       },
     });
 
-    console.log("PaymentData", response.data);
+    console.log(`PaymentDataStatus ${paymentId}: `, paymentData.data.status);
     paymentData = paymentData.data;
 
     if (paymentData.status === "pending") {
@@ -45,6 +45,8 @@ app.post("/store-payment", async (req, res) => {
         ok: true,
       });
     }
+
+    console.log("PaymentData: ", paymentData);
 
     const purchaseDB = await Purchase.findOne({ paymentId: paymentId });
     if (!purchaseDB) {
