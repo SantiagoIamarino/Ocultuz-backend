@@ -7,6 +7,8 @@ const Purchase = require("../models/purchase");
 const axios = require("axios");
 const mpAccessToken = process.env.MP_ACCESS_TOKEN;
 
+const { addOrRemoveUserSub } = require("../config/functions");
+
 const {
   signWebhookRequest,
   createSubscription,
@@ -79,6 +81,8 @@ app.post("/store-payment", async (req, res) => {
       subscriptionDB.status = "completed";
 
       await subscriptionDB.update(subscriptionDB);
+
+      await addOrRemoveUserSub(subscriptionDB.userId, subscriptionDB.girlId);
     }
 
     return res.status(200).json({
