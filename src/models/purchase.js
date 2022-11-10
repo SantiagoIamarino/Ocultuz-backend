@@ -5,7 +5,7 @@ const Schema = mongoose.Schema;
 const purchaseSchema = new Schema({
   userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
   girlId: { type: Schema.Types.ObjectId, ref: "Girl", required: true },
-  description: { type: String, required: true },
+  description: { type: String },
   contentType: { type: String },
   type: { type: String, required: true },
   date: { type: Date, default: new Date() },
